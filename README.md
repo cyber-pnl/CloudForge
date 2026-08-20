@@ -1,8 +1,4 @@
-Oui. Je partirais sur un README **orienté projet professionnel / portfolio DevOps**, pas un README qui ressemble à un simple TP AWS.
-
-J'ai aussi adapté le projet à **OpenTofu + Trivy + Floci**, avec **un seul workflow `ci.yml`**. OpenTofu fournit notamment `fmt`, `validate`, `plan` et `apply`, et `tofu validate` est explicitement adapté à une utilisation dans une CI. ([OpenTofu][1]) Trivy peut scanner le filesystem pour les vulnérabilités, mauvaises configurations et secrets. ([Trivy][2]) Floci expose quant à lui un endpoint AWS local sur `localhost:4566` et documente la compatibilité OpenTofu. ([GitHub][3])
-
-# ☁️ CloudForge
+#  CloudForge
 
 > **Production-grade DevOps laboratory built on a local AWS environment with Floci, OpenTofu and Docker.**
 
@@ -14,15 +10,15 @@ The entire infrastructure can be provisioned locally using **Floci + OpenTofu**,
 
 ---
 
-## 🎯 Project Goals
+##  Project Goals
 
 CloudForge is designed around five main objectives:
 
-* 🏗️ Build a realistic AWS architecture
-* ⚙️ Manage infrastructure entirely with **OpenTofu**
-* 🔄 Implement a complete **CI pipeline**
-* 🔐 Integrate **DevSecOps practices with Trivy**
-* 🧪 Test AWS infrastructure locally using **Floci**
+*  Build a realistic AWS architecture
+*  Manage infrastructure entirely with **OpenTofu**
+*  Implement a complete **CI pipeline**
+*  Integrate **DevSecOps practices with Trivy**
+*  Test AWS infrastructure locally using **Floci**
 
 The goal is not simply to deploy an application.
 
@@ -30,7 +26,7 @@ The goal is to reproduce the **engineering workflow surrounding a production clo
 
 ---
 
-# 🏛️ Architecture
+#  Architecture
 
 The application follows an event-driven AWS architecture.
 
@@ -86,7 +82,7 @@ The application follows an event-driven AWS architecture.
 
 ---
 
-# ☁️ AWS Services
+#  AWS Services
 
 CloudForge intentionally uses several AWS services to demonstrate different cloud patterns.
 
@@ -110,7 +106,7 @@ The infrastructure is executed locally through **Floci**, which provides AWS-com
 
 ---
 
-# 🧰 Technology Stack
+#  Technology Stack
 
 ## Infrastructure
 
@@ -153,7 +149,7 @@ The infrastructure is executed locally through **Floci**, which provides AWS-com
 
 ---
 
-# 📁 Repository Structure
+#  Repository Structure
 
 ```text
 cloudforge/
@@ -218,7 +214,7 @@ cloudforge/
 
 ---
 
-# 🏗️ Infrastructure as Code
+#  Infrastructure as Code
 
 CloudForge uses **OpenTofu** as its Infrastructure as Code engine.
 
@@ -267,7 +263,7 @@ tofu apply
 
 ---
 
-# 🐳 Local AWS Environment
+#  Local AWS Environment
 
 Floci provides the local AWS environment.
 
@@ -311,7 +307,7 @@ Floci's compatibility suite includes dedicated OpenTofu workflows and validates 
 
 ---
 
-# 🔄 CI Pipeline
+#  CI Pipeline
 
 CloudForge intentionally uses **one GitHub Actions workflow**:
 
@@ -369,7 +365,7 @@ The pipeline follows the principle:
 
 ---
 
-# 🔐 DevSecOps
+#  DevSecOps
 
 Security is integrated directly into the CI pipeline.
 
@@ -413,7 +409,7 @@ Integration Tests
 
 ---
 
-# 🧪 Testing Strategy
+#  Testing Strategy
 
 CloudForge follows multiple testing levels.
 
@@ -470,7 +466,7 @@ The complete business workflow is tested from the API entry point to the final s
 
 ---
 
-# 🌍 Environments
+#  Environments
 
 CloudForge uses three logical environments.
 
@@ -498,7 +494,7 @@ The project is initially executed entirely locally. The infrastructure is intent
 
 ---
 
-# 🚨 Reliability & Failure Scenarios
+#  Reliability & Failure Scenarios
 
 CloudForge is also designed as an SRE/DevOps laboratory.
 
@@ -544,7 +540,7 @@ This allows the project to demonstrate not only deployment skills but also **ope
 
 ---
 
-# 📊 Observability
+#  Observability
 
 The platform is designed to expose:
 
@@ -577,7 +573,7 @@ Grafana / Prometheus can be introduced later as an additional observability laye
 
 ---
 
-# 🛡️ Security Principles
+#  Security Principles
 
 The project follows several security principles.
 
@@ -607,7 +603,7 @@ Application artifacts should be built once and promoted between environments rat
 
 ---
 
-# 🚀 Getting Started
+#  Getting Started
 
 ## Requirements
 
@@ -710,7 +706,7 @@ trivy fs .
 
 ---
 
-# 🧹 Cleanup
+#  Cleanup
 
 Destroy the local infrastructure:
 
@@ -726,7 +722,7 @@ docker compose down
 
 ---
 
-# 📋 Makefile
+#  Makefile
 
 To simplify the developer workflow, the project exposes common commands through a `Makefile`.
 
@@ -748,7 +744,7 @@ The goal is to make the project usable without requiring developers to remember 
 
 ---
 
-# 🗺️ Roadmap
+#  Roadmap
 
 ## Phase 1 — Foundation
 
@@ -828,61 +824,9 @@ The goal is to make the project usable without requiring developers to remember 
 
 ---
 
-# 📚 DevOps Skills Demonstrated
 
-This project demonstrates practical experience with:
 
-```text
-Cloud
-├── AWS architecture
-├── Serverless
-├── Event-driven architecture
-└── Cloud-native services
-
-Infrastructure
-├── OpenTofu
-├── Infrastructure as Code
-├── Modules
-└── Environment management
-
-Containers
-├── Docker
-├── Docker Compose
-└── Containerized testing
-
-CI/CD
-├── GitHub Actions
-├── Automated testing
-├── Infrastructure validation
-└── Deployment workflows
-
-DevSecOps
-├── Trivy
-├── IaC scanning
-├── Secret detection
-└── Dependency scanning
-
-Testing
-├── Unit tests
-├── Integration tests
-└── End-to-end tests
-
-Observability
-├── Logs
-├── Metrics
-├── Alerts
-└── Incident response
-
-SRE
-├── Failure scenarios
-├── Runbooks
-├── Recovery
-└── Post-mortems
-```
-
----
-
-# 🎓 Why CloudForge?
+#  Why CloudForge?
 
 CloudForge is intentionally more than an AWS demo project.
 
@@ -902,7 +846,7 @@ The architecture is designed to evolve from a local development environment towa
 
 ---
 
-# 📄 License
+#  License
 
 This project is intended for educational and portfolio purposes.
 
