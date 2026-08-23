@@ -13,12 +13,12 @@ Backlog items are tracked here (see `rules/00-project.md`). Each task should hav
 
 ## Phase 2 — Core Infrastructure
 
-* [ ] DynamoDB
-* [ ] Lambda
-* [ ] API Gateway
-* [ ] IAM
-* [ ] SQS
-* [ ] SNS
+* [x] DynamoDB
+* [x] Lambda
+* [x] API Gateway
+* [x] IAM
+* [x] SQS
+* [x] SNS
 
 ## Phase 3 — Event-driven Architecture
 

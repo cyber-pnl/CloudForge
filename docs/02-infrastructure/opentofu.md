@@ -10,8 +10,14 @@ The infrastructure is divided into reusable modules.
 infrastructure/
 │
 ├── modules/
+│   ├── api-gateway/
+│   ├── dynamodb/
+│   ├── iam/
 │   ├── kms/
-│   └── s3/
+│   ├── lambda/
+│   ├── s3/
+│   ├── sns/
+│   └── sqs/
 │
 └── environments/
     └── dev/
@@ -21,12 +27,20 @@ Additional modules are added in later phases following the same pattern.
 
 ## Modules
 
-| Module | Resources | Purpose |
-| ------ | --------- | ------- |
-| `s3`   | bucket, versioning, public access block, SSE configuration | Object storage with secure defaults; optional customer managed KMS encryption via `kms_master_key_arn`. |
-| `kms`  | key with rotation, alias | Customer managed encryption keys consumed by other modules. |
+| Module       | Resources | Purpose |
+| ------------ | --------- | ------- |
+| `s3`         | bucket, versioning, public access block, SSE configuration | Object storage with secure defaults; optional customer managed KMS encryption via `kms_master_key_arn`. |
+| `kms`        | key with rotation, alias | Customer managed encryption keys consumed by other modules. |
+| `dynamodb`   | table (PAY_PER_REQUEST), point-in-time recovery | Application data tables. |
+| `iam`        | Lambda execution role with scoped inline policy | Least-privilege roles; extra statements are passed per function and restricted to the resources it owns. |
+| `lambda`     | function, CloudWatch log group with retention | Deployment packages are zipped from source directories via the `archive` provider. |
+| `api-gateway`| REST API, resources/methods, AWS_PROXY integrations, deployment, stage | Top-level routes backed by Lambda proxy integrations. |
+| `sqs`        | queue | Asynchronous processing; optional CMK encryption. |
+| `sns`        | topic | Notifications fan-out; optional CMK encryption. |
 
 Each environment consumes the same reusable modules with environment-specific configuration.
+
+The AWS provider is pinned to `~> 5.0` for Floci compatibility — see [Local Environment](local-environment.md#provider-version-pinning).
 
 ```text
                 ┌───────────────┐

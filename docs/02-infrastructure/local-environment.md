@@ -73,4 +73,29 @@ The AWS provider routes each service to its real AWS endpoint unless explicitly 
 
 Rule: every AWS service used in an environment must have its endpoint set to the Floci endpoint in the provider `endpoints` block. When adding a service, extend the block and verify in Floci logs that requests reach the emulator (`docker logs cloudforge-floci`).
 
+### Known unsupported operations (verified by probes)
+
+* `logs:AssociateKmsKey` — reported `UnsupportedOperation`.
+* API Gateway stage access log settings — silently ignored on `UpdateStage`.
+* DynamoDB server-side encryption with customer managed keys — `SSEDescription` stays absent.
+* X-Ray — no service emulation at all.
+
+### Provider version pinning
+
+The project pins `hashicorp/aws` to `~> 5.0`, matching the provider constraint of Floci's own OpenTofu compatibility suite. Provider 6.45+ regresses on API Gateway v1 (`GetRestApi`/`PutRestApi` response fields, upstream issues floci-io/floci#855 and #999): under 6.x the `aws_api_gateway_rest_api` waiter fails with `unexpected state ''`. Revisit when Floci ships fixes for these issues.
+
+### Lambda execution model
+
+Functions run as real Docker containers using `public.ecr.aws/lambda/python:<version>` runtime images. The image is pulled by Floci at first invocation; pre-pulling it avoids slow cold starts:
+
+```bash
+docker pull public.ecr.aws/lambda/python:3.13
+```
+
+The local execute-plane URL for REST APIs differs from real AWS:
+
+```text
+http://localhost:4566/restapis/{api_id}/{stage}/_user_request_/{path}
+```
+
 See `skills/floci/SKILL.md` for the working procedure.
