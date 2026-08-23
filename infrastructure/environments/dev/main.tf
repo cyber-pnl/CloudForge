@@ -24,6 +24,7 @@ provider "aws" {
     sns        = var.floci_endpoint
     iam        = var.floci_endpoint
     logs       = var.floci_endpoint
+    events     = var.floci_endpoint
   }
 
   skip_credentials_validation = true
@@ -43,7 +44,8 @@ locals {
 module "users_table" {
   source = "../../modules/dynamodb"
 
-  table_name = "cloudforge-dev-users"
+  table_name     = "cloudforge-dev-users"
+  stream_enabled = true
 
   tags = local.common_tags
 }
@@ -51,7 +53,8 @@ module "users_table" {
 module "projects_table" {
   source = "../../modules/dynamodb"
 
-  table_name = "cloudforge-dev-projects"
+  table_name     = "cloudforge-dev-projects"
+  stream_enabled = true
 
   tags = local.common_tags
 }
@@ -120,7 +123,7 @@ module "users_function" {
   source = "../../modules/lambda"
 
   function_name = "cloudforge-dev-users"
-  source_dir    = "${path.root}/../../../lambdas/users"
+  source_dir    = "${path.root}/../../../lambdas/users/build"
   output_path   = "${path.module}/build/users.zip"
   role_arn      = module.users_role.role_arn
 
@@ -136,7 +139,7 @@ module "projects_function" {
   source = "../../modules/lambda"
 
   function_name = "cloudforge-dev-projects"
-  source_dir    = "${path.root}/../../../lambdas/projects"
+  source_dir    = "${path.root}/../../../lambdas/projects/build"
   output_path   = "${path.module}/build/projects.zip"
   role_arn      = module.projects_role.role_arn
 
@@ -172,8 +175,19 @@ module "api" {
 module "jobs_queue" {
   source = "../../modules/sqs"
 
-  queue_name         = "cloudforge-dev-jobs"
-  kms_master_key_arn = module.messaging_key.key_arn
+  queue_name                 = "cloudforge-dev-jobs"
+  kms_master_key_arn         = module.messaging_key.key_arn
+  visibility_timeout_seconds = 30
+
+  tags = local.common_tags
+}
+
+module "jobs_dlq" {
+  source = "../../modules/sqs"
+
+  queue_name                = "cloudforge-dev-jobs-dlq"
+  kms_master_key_arn        = module.messaging_key.key_arn
+  message_retention_seconds = 1209600
 
   tags = local.common_tags
 }
@@ -186,4 +200,148 @@ module "notifications_topic" {
   kms_master_key_arn = module.messaging_key.key_arn
 
   tags = local.common_tags
+}
+
+module "event_bus" {
+  source = "../../modules/eventbridge"
+
+  bus_name = "cloudforge-dev-events"
+
+  rules = {
+    jobs = {
+      description   = "Route domain change events to the jobs queue"
+      event_pattern = jsonencode({ source = [{ prefix = "cloudforge." }] })
+      target_arn    = module.jobs_queue.queue_arn
+    }
+    notify = {
+      description   = "Route domain change events to the notifications topic"
+      event_pattern = jsonencode({ source = [{ prefix = "cloudforge." }] })
+      target_arn    = module.notifications_topic.topic_arn
+    }
+  }
+
+  tags = local.common_tags
+}
+
+module "dispatcher_role" {
+  source = "../../modules/iam"
+
+  role_name = "cloudforge-dev-dispatcher-role"
+
+  policy_statements = [
+    {
+      Effect   = "Allow"
+      Action   = ["dynamodb:DescribeStream", "dynamodb:GetRecords", "dynamodb:GetShardIterator", "dynamodb:ListStreams"]
+      Resource = [module.users_table.stream_arn, module.projects_table.stream_arn]
+    },
+    {
+      Effect   = "Allow"
+      Action   = ["events:PutEvents"]
+      Resource = [module.event_bus.bus_arn]
+    }
+  ]
+
+  tags = local.common_tags
+}
+
+module "worker_role" {
+  source = "../../modules/iam"
+
+  role_name = "cloudforge-dev-worker-role"
+
+  policy_statements = [
+    {
+      Effect   = "Allow"
+      Action   = ["s3:PutObject"]
+      Resource = ["${module.artifacts_bucket.bucket_arn}/artifacts/*"]
+    },
+    {
+      Effect   = "Allow"
+      Action   = ["sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes"]
+      Resource = [module.jobs_queue.queue_arn]
+    }
+  ]
+
+  tags = local.common_tags
+}
+
+module "users_dispatcher" {
+  source = "../../modules/lambda"
+
+  function_name = "cloudforge-dev-users-dispatcher"
+  source_dir    = "${path.root}/../../../lambdas/dispatcher/build"
+  output_path   = "${path.module}/build/users-dispatcher.zip"
+  role_arn      = module.dispatcher_role.role_arn
+  timeout       = 10
+
+  environment_variables = {
+    TABLE_NAME     = module.users_table.table_name
+    EVENT_BUS_NAME = module.event_bus.bus_name
+  }
+
+  tags = local.common_tags
+}
+
+module "projects_dispatcher" {
+  source = "../../modules/lambda"
+
+  function_name = "cloudforge-dev-projects-dispatcher"
+  source_dir    = "${path.root}/../../../lambdas/dispatcher/build"
+  output_path   = "${path.module}/build/projects-dispatcher.zip"
+  role_arn      = module.dispatcher_role.role_arn
+  timeout       = 10
+
+  environment_variables = {
+    TABLE_NAME     = module.projects_table.table_name
+    EVENT_BUS_NAME = module.event_bus.bus_name
+  }
+
+  tags = local.common_tags
+}
+
+module "worker_function" {
+  source = "../../modules/lambda"
+
+  function_name = "cloudforge-dev-worker"
+  source_dir    = "${path.root}/../../../lambdas/worker/build"
+  output_path   = "${path.module}/build/worker.zip"
+  role_arn      = module.worker_role.role_arn
+  timeout       = 10
+
+  environment_variables = {
+    ARTIFACT_BUCKET = var.artifacts_bucket_name
+    ARTIFACT_PREFIX = "artifacts/"
+  }
+
+  tags = local.common_tags
+}
+
+resource "aws_sqs_queue_redrive_policy" "jobs" {
+  queue_url = module.jobs_queue.queue_url
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = module.jobs_dlq.queue_arn
+    maxReceiveCount     = 3
+  })
+}
+
+resource "aws_lambda_event_source_mapping" "users_stream" {
+  event_source_arn                   = module.users_table.stream_arn
+  function_name                      = module.users_dispatcher.function_name
+  starting_position                  = "LATEST"
+  batch_size                         = 10
+  maximum_batching_window_in_seconds = 1
+}
+
+resource "aws_lambda_event_source_mapping" "projects_stream" {
+  event_source_arn                   = module.projects_table.stream_arn
+  function_name                      = module.projects_dispatcher.function_name
+  starting_position                  = "LATEST"
+  batch_size                         = 10
+  maximum_batching_window_in_seconds = 1
+}
+
+resource "aws_lambda_event_source_mapping" "jobs_queue" {
+  event_source_arn = module.jobs_queue.queue_arn
+  function_name    = module.worker_function.function_name
+  batch_size       = 1
 }

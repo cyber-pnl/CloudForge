@@ -33,6 +33,16 @@ output "jobs_queue_url" {
   value       = module.jobs_queue.queue_url
 }
 
+output "jobs_dlq_url" {
+  description = "URL of the jobs dead letter queue."
+  value       = module.jobs_dlq.queue_url
+}
+
+output "event_bus_name" {
+  description = "Name of the custom EventBridge bus."
+  value       = module.event_bus.bus_name
+}
+
 output "notifications_topic_arn" {
   description = "ARN of the notifications SNS topic."
   value       = module.notifications_topic.topic_arn
