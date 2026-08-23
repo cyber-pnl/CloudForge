@@ -10,18 +10,21 @@ The infrastructure is divided into reusable modules.
 infrastructure/
 │
 ├── modules/
-│   ├── lambda/
-│   ├── dynamodb/
-│   ├── s3/
-│   ├── sqs/
-│   ├── sns/
-│   └── api-gateway/
+│   ├── kms/
+│   └── s3/
 │
 └── environments/
-    ├── dev/
-    ├── staging/
-    └── prod/
+    └── dev/
 ```
+
+Additional modules are added in later phases following the same pattern.
+
+## Modules
+
+| Module | Resources | Purpose |
+| ------ | --------- | ------- |
+| `s3`   | bucket, versioning, public access block, SSE configuration | Object storage with secure defaults; optional customer managed KMS encryption via `kms_master_key_arn`. |
+| `kms`  | key with rotation, alias | Customer managed encryption keys consumed by other modules. |
 
 Each environment consumes the same reusable modules with environment-specific configuration.
 

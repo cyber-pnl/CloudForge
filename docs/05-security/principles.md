@@ -67,3 +67,11 @@ Findings may only be accepted through the documented exception procedure (`rules
 ## Immutable builds
 
 Application artifacts should be built once and promoted between environments rather than rebuilt differently for each environment.
+
+## Accepted findings
+
+Security findings that are intentionally accepted must be documented here, with the narrowest possible scope (`rules/03-security.md`).
+
+| Finding | Severity | Scope | Reason | Re-evaluation |
+| ------- | -------- | ----- | ------ | ------------- |
+| AWS-0089 — Bucket has logging disabled | LOW | `modules/s3` buckets in dev | S3 access logging requires a dedicated log destination bucket; the logging architecture decision belongs to the observability phase. | Phase 7 (Observability) |

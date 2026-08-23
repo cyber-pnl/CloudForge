@@ -4,12 +4,12 @@ Backlog items are tracked here (see `rules/00-project.md`). Each task should hav
 
 ## Phase 1 — Foundation
 
-* [ ] Repository setup
-* [ ] Docker Compose
-* [ ] Floci integration
-* [ ] OpenTofu project
-* [ ] AWS provider configuration
-* [ ] Basic S3 infrastructure
+* [x] Repository setup
+* [x] Docker Compose
+* [x] Floci integration
+* [x] OpenTofu project
+* [x] AWS provider configuration
+* [x] Basic S3 infrastructure
 
 ## Phase 2 — Core Infrastructure
 
