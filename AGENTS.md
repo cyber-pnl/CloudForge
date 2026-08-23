@@ -32,7 +32,7 @@ docs/          Source of truth for project knowledge
 | `rules/02-opentofu.md` | Declarative IaC, validation, destructive operations |
 | `rules/03-security.md` | Security baseline, Trivy policy, secrets |
 | `rules/04-testing.md` | Testing levels, validation before completion |
-| `rules/05-git.md` | Small focused changes |
+| `rules/05-git.md` | Small focused changes, conventional commits |
 | `rules/06-agent.md` | Workflow, failure handling, ambiguity, communication, final checklist |
 | `rules/07-ci.md` | Single CI workflow constraint |
 
