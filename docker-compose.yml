@@ -1,0 +1,12 @@
+services:
+  floci:
+    image: floci/floci:1.7.0
+    container_name: cloudforge-floci
+    ports:
+      - "4566:4566"
+    environment:
+      FLOCI_STORAGE_MODE: hybrid
+      FLOCI_DEFAULT_REGION: us-east-1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    user: root
