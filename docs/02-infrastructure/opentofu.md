@@ -12,6 +12,7 @@ infrastructure/
 ├── modules/
 │   ├── api-gateway/
 │   ├── dynamodb/
+│   ├── eventbridge/
 │   ├── iam/
 │   ├── kms/
 │   ├── lambda/
@@ -37,8 +38,11 @@ Additional modules are added in later phases following the same pattern.
 | `api-gateway`| REST API, resources/methods, AWS_PROXY integrations, deployment, stage | Top-level routes backed by Lambda proxy integrations. |
 | `sqs`        | queue | Asynchronous processing; optional CMK encryption. |
 | `sns`        | topic | Notifications fan-out; optional CMK encryption. |
+| `eventbridge`| custom bus, rules with single target each | Domain events routing; patterns are passed as JSON strings. |
 
 Each environment consumes the same reusable modules with environment-specific configuration.
+
+Integration glue that binds resources across modules — event source mappings, SQS redrive policies, API routes to functions — lives in the environment files rather than inside modules: these resources need ARNs of other modules' outputs and would otherwise force `count`/`for_each` on values only known at apply time.
 
 The AWS provider is pinned to `~> 5.0` for Floci compatibility — see [Local Environment](local-environment.md#provider-version-pinning).
 

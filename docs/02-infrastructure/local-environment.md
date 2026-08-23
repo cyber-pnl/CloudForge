@@ -80,6 +80,17 @@ Rule: every AWS service used in an environment must have its endpoint set to the
 * DynamoDB server-side encryption with customer managed keys — `SSEDescription` stays absent.
 * X-Ray — no service emulation at all.
 
+### Event-driven behavior quirks (verified in Phase 3)
+
+* Lambda event source mapping payloads for DynamoDB streams **omit `eventSourceARN`** — consumers must receive the table identity through configuration, not payload inspection (see ADR-001).
+* Recreating a stream ESM or its function **replays historical stream records**; treat idempotent workers and DLQ contents with this in mind when re-deploying.
+* The redrive policy works end to end (`maxReceiveCount=3`, messages land in the dead letter queue), but `ApproximateReceiveCount` may exceed the configured maximum.
+* AWS CLI v2.31.x on Python 3.14 crashes with `badly formed help string` on some SQS commands (`send-message`, `receive-message`). Workaround: call the API through the vendored boto3 shipped with the lambda builds:
+
+  ```bash
+  PYTHONPATH=lambdas/dispatcher/build python3 -c "import boto3; ..."
+  ```
+
 ### Provider version pinning
 
 The project pins `hashicorp/aws` to `~> 5.0`, matching the provider constraint of Floci's own OpenTofu compatibility suite. Provider 6.45+ regresses on API Gateway v1 (`GetRestApi`/`PutRestApi` response fields, upstream issues floci-io/floci#855 and #999): under 6.x the `aws_api_gateway_rest_api` waiter fails with `unexpected state ''`. Revisit when Floci ships fixes for these issues.

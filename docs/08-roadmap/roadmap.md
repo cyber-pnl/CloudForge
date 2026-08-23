@@ -22,11 +22,11 @@ Backlog items are tracked here (see `rules/00-project.md`). Each task should hav
 
 ## Phase 3 — Event-driven Architecture
 
-* [ ] DynamoDB Streams
-* [ ] EventBridge
-* [ ] Worker Lambda
-* [ ] Dead Letter Queue
-* [ ] Retry strategy
+* [x] DynamoDB Streams
+* [x] EventBridge
+* [x] Worker Lambda
+* [x] Dead Letter Queue
+* [x] Retry strategy
 
 ## Phase 4 — Application
 
