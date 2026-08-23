@@ -2,6 +2,7 @@
 *.tfstate
 *.tfstate.*
 *.tfplan
+infrastructure/**/build/
 crash.log
 crash.*.log
 override.tf
