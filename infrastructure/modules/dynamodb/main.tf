@@ -3,6 +3,9 @@ resource "aws_dynamodb_table" "this" {
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = var.hash_key
 
+  stream_enabled   = var.stream_enabled
+  stream_view_type = var.stream_enabled ? var.stream_view_type : null
+
   attribute {
     name = var.hash_key
     type = var.hash_key_type

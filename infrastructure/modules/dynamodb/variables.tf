@@ -36,6 +36,18 @@ variable "pitr_enabled" {
   default     = true
 }
 
+variable "stream_enabled" {
+  description = "Enable a DynamoDB stream on the table."
+  type        = bool
+  default     = false
+}
+
+variable "stream_view_type" {
+  description = "Stream records content: KEYS_ONLY, NEW_IMAGE, OLD_IMAGE or NEW_AND_OLD_IMAGES."
+  type        = string
+  default     = "NEW_AND_OLD_IMAGES"
+}
+
 variable "tags" {
   description = "Additional tags applied to the table."
   type        = map(string)
