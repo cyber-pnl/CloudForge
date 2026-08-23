@@ -3,6 +3,7 @@
 *.tfstate.*
 *.tfplan
 infrastructure/**/build/
+lambdas/*/build/
 crash.log
 crash.*.log
 override.tf
