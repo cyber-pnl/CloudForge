@@ -71,7 +71,7 @@ tofu apply
 
 ## 7. Run tests
 
-From the repository root:
+From the repository root (inside a virtual environment, see `requirements-dev.txt`):
 
 ```bash
 pytest

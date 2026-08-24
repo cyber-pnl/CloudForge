@@ -65,7 +65,6 @@ destroy:
 	tofu -chdir=$(TOFU_DIR) destroy
 
 test:
-	python3 -m pip install -q --disable-pip-version-check -r requirements-dev.txt
 	pytest
 
 test-integration:
