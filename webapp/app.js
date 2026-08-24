@@ -24,14 +24,23 @@ function toast(message, kind = "ok") {
 
 async function api(method, path, body) {
   if (!store.base) throw new Error("Configure the API base URL first");
-  const response = await fetch(`${store.base}${path}`, {
-    method,
-    headers: {
-      Authorization: `Bearer ${store.token}`,
-      ...(body ? { "Content-Type": "application/json" } : {}),
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  let response;
+  try {
+    response = await fetch(`${store.base}${path}`, {
+      method,
+      headers: {
+        Authorization: `Bearer ${store.token}`,
+        ...(body ? { "Content-Type": "application/json" } : {}),
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch (networkError) {
+    throw new Error(
+      "Failed to reach the API. The base URL must start with " +
+        "http://localhost:8080/floci/restapis/<api-id>/dev/_user_request_ " +
+        "(same origin as this page, not localhost:4566) and the stack must be up (docker compose ps)."
+    );
+  }
   if (response.status === 204) return null;
   const payload = await response.json();
   if (!response.ok) {
