@@ -25,11 +25,31 @@ env:
   TOFU_DIR: infrastructure/environments/dev
 
 jobs:
-  pipeline:
-    name: validate, scan and integration-test
+  validate:
+    name: "1 · Validate IaC"
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
+      - name: Set up OpenTofu
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: 1.12.6
+
+      - name: OpenTofu formatting
+        run: make fmt-check
+
+      - name: OpenTofu validation
+        run: |
+          make init
+          make validate
+
+  unit-tests:
+    name: "2 · Unit tests"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -42,21 +62,16 @@ jobs:
       - name: Install test dependencies
         run: python -m pip install -r requirements-dev.txt
 
-      - name: Set up OpenTofu
-        uses: opentofu/setup-opentofu@v1
-        with:
-          tofu_version: 1.12.6
-
       - name: Unit tests
         run: make test
 
-      - name: OpenTofu formatting
-        run: make fmt-check
-
-      - name: OpenTofu validation
-        run: |
-          make init
-          make validate
+  security:
+    name: "3 · Security gates"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Build lambda packages
         run: make package
@@ -92,6 +107,23 @@ jobs:
           severity: HIGH,CRITICAL
           exit-code: 1
 
+  integration:
+    name: "4 · Integration on ephemeral dev"
+    needs: [validate, unit-tests, security]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up OpenTofu
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: 1.12.6
+
+      - name: Build lambda packages
+        run: make package
+
       - name: Start Floci
         run: |
           docker compose up -d
@@ -117,14 +149,31 @@ jobs:
       - name: Integration tests
         run: ./scripts/integration-tests.sh
 
-      - name: Promote to staging (manual dispatch only)
-        if: inputs.deploy_staging == true
+      - name: Destroy ephemeral infrastructure
+        if: always()
+        continue-on-error: true
+        run: |
+           # Empty the artifacts bucket
+           aws s3 rm s3://cloudforge-dev-artifacts --recursive || true
+           tofu -chdir=$TOFU_DIR destroy -auto-approve -input=false
+
+  promote-staging:
+    name: "5 · Promote to staging"
+    needs: [integration]
+    if: inputs.deploy_staging == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up OpenTofu
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: 1.12.6
+
+      - name: Deploy staging and verify
         run: |
           tofu -chdir=infrastructure/environments/staging init -input=false
           tofu -chdir=infrastructure/environments/staging apply -auto-approve -input=false
           TOFU_DIR=infrastructure/environments/staging ./scripts/integration-tests.sh
-
-      - name: Destroy ephemeral infrastructure
-        if: always()
-        continue-on-error: true
-        run: tofu -chdir=$TOFU_DIR destroy -auto-approve -input=false

@@ -8,56 +8,37 @@ CloudForge intentionally uses **one GitHub Actions workflow**:
 
 The workflow is responsible for validating the complete project.
 
-## Stages
+## Jobs
+
+The workflow is split into five GitHub Actions **jobs** so every stage is a
+separate box on the run page:
 
 ```text
-                Pull Request / Push
-                        │
-                        ▼
-                ┌───────────────┐
-                │   Checkout    │
-                └───────┬───────┘
-                        ▼
-                ┌───────────────┐
-                │  Lint / Test  │
-                └───────┬───────┘
-                        ▼
-                ┌───────────────┐
-                │ OpenTofu fmt  │
-                └───────┬───────┘
-                        ▼
-                ┌───────────────┐
-                │ OpenTofu      │
-                │ validate      │
-                └───────┬───────┘
-                        ▼
-                ┌───────────────┐
-                │    Trivy      │
-                │ Security Scan │
-                └───────┬───────┘
-                        ▼
-                ┌───────────────┐
-                │     Floci     │
-                └───────┬───────┘
-                        ▼
-                ┌───────────────┐
-                │ OpenTofu Plan │
-                └───────┬───────┘
-                        ▼
-                ┌───────────────┐
-                │    Apply      │
-                └───────┬───────┘
-                        ▼
-                ┌───────────────┐
-                │ Integration   │
-                │ Tests         │
-                └───────┬───────┘
-                        ▼
-                ┌───────────────┐
-                │   Destroy     │
-                │  (ephemeral)  │
-                └───────────────┘
+  Pull Request / Push / Dispatch
+        │
+        ├──────────────┬──────────────┐
+        ▼              ▼              ▼
+ ┌─────────────┐ ┌───────────┐ ┌─────────────┐
+ │ 1 · Validate│ │ 2 · Unit  │ │ 3 · Security│      (parallel)
+ │     IaC     │ │   tests   │ │    gates    │
+ └──────┬──────┘ └─────┬─────┘ └──────┬──────┘
+        └──────────────┼──────────────┘
+                       ▼
+             ┌──────────────────┐
+             │ 4 · Integration  │   floci → plan → apply → e2e
+             │   ephemeral dev  │   → destroy (always)
+             └────────┬─────────┘
+                      ▼
+             ┌──────────────────┐
+             │ 5 · Promote to   │   workflow_dispatch only,
+             │     staging      │   input deploy_staging = true
+             └──────────────────┘
 ```
+
+Jobs 1–3 are deterministic, fast checks and run in parallel for fail-fast
+feedback; the integration job only starts once all three pass. The promote
+job appears as "skipped" unless the run was dispatched with
+`deploy_staging`.
 
 The plan validates the full provider interaction against the emulator; the apply stage deploys the stack so the integration tests can exercise real endpoints (`scripts/integration-tests.sh`). The final destroy only cleans the ephemeral runner environment — its failure never masks a pipeline failure.
 
@@ -76,8 +57,8 @@ Lower severities are handled through the accepted-findings ledger in `docs/05-se
 
 ## Principles
 
-* One workflow only — do not create additional workflows unless the architecture explicitly changes (`rules/07-ci.md`).
-* Fail fast on deterministic validation failures.
+* One workflow only — do not create additional workflows unless the architecture explicitly changes (`rules/07-ci.md`). Job splitting inside the single workflow is encouraged for readability.
+* Fail fast on deterministic validation failures — the three fast jobs run in parallel and block the integration job.
 * Do not hide errors.
 * Security checks must never be disabled to make CI pass.
 * Every exception to a gate is narrow (one file, one severity range) and justified in documentation.
