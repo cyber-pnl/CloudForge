@@ -78,7 +78,21 @@ To run the integration suite against another environment:
 TOFU_DIR=infrastructure/environments/staging ./scripts/integration-tests.sh
 ```
 
-## 7. Run tests
+## 7. Web console
+
+A browser console manages users, projects and artifacts without curl:
+
+```bash
+docker compose up -d webapp   # serves http://localhost:8080
+make ui-url                   # prints the API base URL to paste in the console
+```
+
+Paste both values in the header (token: `local-dev-token` for dev) and hit
+Save. The console talks to the API through a same-origin nginx proxy
+(`/floci/` → `localhost:4566`), so no CORS setup is involved; direct browser
+calls to the execute plane also work since responses carry CORS headers.
+
+## 8. Run tests
 
 From the repository root (inside a virtual environment, see `requirements-dev.txt`):
 

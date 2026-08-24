@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CloudForge Console</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>CloudForge <span class="muted">console</span></h1>
+    <div class="settings">
+      <label>API base URL
+        <input id="api-base" type="url" placeholder="http://localhost:8080/floci/restapis/&lt;id&gt;/dev/_user_request_" />
+      </label>
+      <label>Bearer token
+        <input id="api-token" type="password" placeholder="local-dev-token" />
+      </label>
+      <button id="save-settings">Save</button>
+      <span id="conn-status" class="badge unknown">not connected</span>
+    </div>
+  </header>
+
+  <nav>
+    <button class="tab active" data-tab="users">Users</button>
+    <button class="tab" data-tab="projects">Projects</button>
+    <button class="tab" data-tab="artifacts">Artifacts</button>
+  </nav>
+
+  <main>
+    <!-- ============ USERS ============ -->
+    <section id="tab-users" class="panel active">
+      <div class="toolbar">
+        <h2>Users</h2>
+        <button class="refresh" data-load="users">Refresh</button>
+      </div>
+      <form id="user-form" class="card">
+        <input name="name" placeholder="Full name" required />
+        <input name="email" type="email" placeholder="email@example.com" required />
+        <button type="submit">Create user</button>
+      </form>
+      <table id="users-table">
+        <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Created</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- ============ PROJECTS ============ -->
+    <section id="tab-projects" class="panel">
+      <div class="toolbar">
+        <h2>Projects</h2>
+        <button class="refresh" data-load="projects">Refresh</button>
+      </div>
+      <form id="project-form" class="card">
+        <input name="name" placeholder="Project name" required />
+        <select name="owner" required></select>
+        <input name="description" placeholder="Description (optional)" />
+        <button type="submit">Create draft</button>
+      </form>
+      <table id="projects-table">
+        <thead><tr><th>ID</th><th>Name</th><th>Status</th><th>Owner</th><th>Transitions</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- ============ ARTIFACTS ============ -->
+    <section id="tab-artifacts" class="panel">
+      <div class="toolbar">
+        <h2>Artifacts</h2>
+        <select id="artifact-project"></select>
+        <button class="refresh" data-load="artifacts">Refresh</button>
+      </div>
+      <form id="artifact-form" class="card">
+        <input type="file" required />
+        <button type="submit">Upload artifact</button>
+        <span class="hint">stored in S3 under projects/{id}/ — a change trace follows via the event pipeline</span>
+      </form>
+      <table id="artifacts-table">
+        <thead><tr><th>Key</th><th>Size</th><th>Last modified</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+
+  <div id="toast"></div>
+  <script src="app.js"></script>
+</body>
+</html>

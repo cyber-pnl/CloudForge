@@ -101,6 +101,15 @@ Rule: every AWS service used in an environment must have its endpoint set to the
 * Cognito CRUD operations work, and `COGNITO_USER_POOLS` authorizers can be created on the API — but **authorizers are not enforced at invocation time** (a protected method answers `200` without any token). Authentication is therefore implemented at application level; see ADR-002.
 * `apigateway:DeleteAuthorizer` fails with an unrelated S3 `NoSuchBucket` error; probed authorizers cannot be removed and stay orphaned (inert once no method references them).
 
+### OPTIONS preflights never reach Lambda (verified in Phase 10)
+
+The emulator intercepts `OPTIONS` on any route and answers itself with a bare
+`200` and an `Allow` header — the request does not invoke the backend, so the
+response carries no custom headers (no CORS headers, regardless of what the
+Lambda would return; the handlers' `preflight()` path only executes on real
+AWS). Browser consoles therefore call the API through the same-origin nginx
+proxy in the webapp service instead of relying on preflight behavior.
+
 ### State drift on read-back (verified in Phase 7)
 
 Floci does not persist or read back some attributes that the provider writes. Every refresh then reports drift that would force replacements:

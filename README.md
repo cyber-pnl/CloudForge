@@ -13,6 +13,7 @@ The entire infrastructure is provisioned with **OpenTofu** against **Floci** (a 
 * **Local AWS simulation** — Floci provides AWS-compatible APIs on `localhost:4566`
 * **Infrastructure as Code** — declarative, reusable OpenTofu modules per AWS service
 * **Event-driven architecture** — API Gateway → Lambda → DynamoDB → Streams → EventBridge → SQS/SNS → S3
+* **Web console** — browser UI for the domain served by nginx with a same-origin API proxy
 * **CI pipeline** — one GitHub Actions workflow covering lint, tests, IaC validation and integration tests
 * **DevSecOps** — Trivy scans for vulnerabilities, misconfigurations and secrets at every change
 * **Reliability engineering** — controlled failure scenarios, DLQs, alarms and incident documentation
@@ -122,6 +123,9 @@ tofu apply
 # 4. Run tests and security scan (from repository root)
 pytest
 trivy fs .
+
+# 5. Open the web console (users, projects, artifacts)
+docker compose up -d webapp && make ui-url
 ```
 
 Full setup guide: [docs/04-devops/getting-started.md](docs/04-devops/getting-started.md)
@@ -146,8 +150,9 @@ cloudforge/
 ├── infrastructure/
 │   ├── modules/               # Reusable OpenTofu modules per AWS service
 │   └── environments/          # dev / staging / prod configurations
-├── tests/                     # unit / integration / e2e
-├── docker/                    # Container assets
+├── tests/                       # unit / integration / e2e
+├── webapp/                      # browser console (vanilla JS + nginx proxy)
+├── docker/                      # Container assets
 ├── rules/                     # Mandatory project constraints (agents)
 ├── skills/                    # Project-specific procedures (agents)
 ├── docs/                      # Project knowledge base

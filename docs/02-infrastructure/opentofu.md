@@ -42,6 +42,8 @@ Additional modules are added in later phases following the same pattern.
 
 Each environment consumes the same reusable modules with environment-specific configuration.
 
+Lambda packages are **byte-reproducible**: `make package` strips `__pycache__` directories (their `.pyc` files embed source mtimes) and normalizes file timestamps to the epoch, so rebuilding without code changes yields identical zips and identical `source_code_hash` values. Without this, every repackaging would flag all Lambda functions as drifted even though nothing changed.
+
 Integration glue that binds resources across modules — event source mappings, SQS redrive policies, API routes to functions — lives in the environment files rather than inside modules: these resources need ARNs of other modules' outputs and would otherwise force `count`/`for_each` on values only known at apply time.
 
 The AWS provider is pinned to `~> 5.0` for Floci compatibility — see [Local Environment](local-environment.md#provider-version-pinning).

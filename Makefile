@@ -4,7 +4,7 @@ TOFU_DIR := infrastructure/environments/dev
 TF_ARGS  ?=
 AUTO_APPROVE ?= false
 
-.PHONY: help up down init fmt fmt-check validate plan apply destroy package test test-integration security inject-poison inject-outage
+.PHONY: help up down init fmt fmt-check validate plan apply destroy package test test-integration security inject-poison inject-outage ui ui-url
 
 help:
 	@printf "%-16s %s\n" \
@@ -22,7 +22,17 @@ help:
 		test-integration "run end-to-end integration tests against floci" \
 		security "run trivy report plus secret, iac and dependency gates" \
 		inject-poison "inject a poison job and watch it reach the dlq" \
-		inject-outage "stop the emulator briefly to exercise api health alerting"
+		inject-outage "stop the emulator briefly to exercise api health alerting" \
+		ui "print the web console url" \
+		ui-url "print the ready-to-paste api base url for the console"
+
+ui:
+	@echo "CloudForge console: http://localhost:8080/ (docker compose up -d webapp)"
+	@$(MAKE) -s ui-url
+
+ui-url:
+	@echo "API base URL to paste in the console:"
+	@echo "http://localhost:8080/floci/restapis/$$(cd $(TOFU_DIR) && tofu output -raw rest_api_id)/dev/_user_request_"
 
 inject-poison:
 	./scripts/failure-injection.sh poison-job
@@ -60,6 +70,8 @@ package:
 			echo "Vendoring dependencies for $$name"; \
 			python3 -m pip install -q --disable-pip-version-check -r $$src/requirements.txt -t $$dest; \
 		fi; \
+		find $$dest -name '__pycache__' -type d -prune -exec rm -rf {} +; \
+		find $$dest -exec touch -d '@0' {} +; \
 	done
 	@echo "Lambda packages built under lambdas/*/build"
 
