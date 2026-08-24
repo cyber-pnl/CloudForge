@@ -19,6 +19,32 @@ The entire infrastructure is provisioned with **OpenTofu** against **Floci** (a 
 
 ---
 
+## Business Domain
+
+Underneath the platform engineering, CloudForge runs a small but realistic application domain: **users own projects, and projects carry artifacts**.
+
+| Entity | Business rules |
+| ------ | -------------- |
+| **User** | Created with `name` + `email`; emails are unique (`409` on duplicates); full updates via PUT |
+| **Project** | Must reference an existing user as `owner` (`400` otherwise); follows a strict lifecycle below |
+| **Artifact** | Uploaded to a project as `filename` + `content_base64`; payload validated and size-capped; stored in S3 under `projects/{id}/` |
+
+Projects move through an enforced state machine — an archived project never reopens:
+
+```text
+draft  ──→ active, archived
+active ──→ draft, archived
+archived ──→ terminal
+```
+
+Every write to users or projects flows through the event pipeline shown in the architecture diagram: a dispatcher turns each DynamoDB stream record into a domain event, and a worker persists an **immutable, timestamped trace** of every change in S3. Failed jobs retry three times, then land in a dead-letter queue that raises an alert.
+
+Cross-cutting rules apply everywhere: every endpoint requires Bearer authentication, and all errors share one normalized `{error, message}` shape with consistent status codes.
+
+The application logic lives in `lambdas/` (handlers plus shared `common/` modules for auth, lifecycle and responses) and is exercised by unit tests without any AWS dependency.
+
+---
+
 ## Architecture
 
 ```text
