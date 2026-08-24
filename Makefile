@@ -19,6 +19,7 @@ help:
 		apply "apply infrastructure plan (runs package first)" \
 		destroy "destroy local infrastructure" \
 		test "run unit tests" \
+		test-integration "run end-to-end integration tests against floci" \
 		security "run trivy security scan"
 
 up:
@@ -65,6 +66,9 @@ destroy:
 
 test:
 	pytest
+
+test-integration:
+	./scripts/integration-tests.sh
 
 security:
 	trivy fs .

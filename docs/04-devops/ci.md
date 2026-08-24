@@ -45,10 +45,30 @@ The workflow is responsible for validating the complete project.
                 └───────┬───────┘
                         ▼
                 ┌───────────────┐
+                │    Apply      │
+                └───────┬───────┘
+                        ▼
+                ┌───────────────┐
                 │ Integration   │
                 │ Tests         │
+                └───────┬───────┘
+                        ▼
+                ┌───────────────┐
+                │   Destroy     │
+                │  (ephemeral)  │
                 └───────────────┘
 ```
+
+The plan validates the full provider interaction against the emulator; the apply stage deploys the stack so the integration tests can exercise real endpoints (`scripts/integration-tests.sh`). The final destroy only cleans the ephemeral runner environment — its failure never masks a pipeline failure.
+
+## Trivy gate policy
+
+The scan runs twice:
+
+1. **Report** — every finding is printed regardless of severity.
+2. **Gate** — the build fails only on `HIGH` or `CRITICAL` misconfigurations.
+
+Lower severities are handled through the accepted-findings ledger in `docs/05-security/principles.md`; they must be either fixed or documented there, never ignored silently.
 
 ## Principles
 

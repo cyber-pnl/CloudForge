@@ -28,6 +28,11 @@ output "api_invoke_url" {
   value       = module.api.invoke_url
 }
 
+output "rest_api_id" {
+  description = "Identifier of the REST API, used to build local execute-plane URLs."
+  value       = module.api.rest_api_id
+}
+
 output "jobs_queue_url" {
   description = "URL of the jobs SQS queue."
   value       = module.jobs_queue.queue_url

@@ -109,6 +109,7 @@ make validate
 make plan              # runs make package first
 make apply             # runs make package first; add AUTO_APPROVE=true for non-interactive runs
 make test
+make test-integration
 make security
 make destroy
 ```

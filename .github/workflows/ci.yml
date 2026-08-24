@@ -1,0 +1,99 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  AWS_ACCESS_KEY_ID: test
+  AWS_SECRET_ACCESS_KEY: test
+  AWS_DEFAULT_REGION: us-east-1
+  TOFU_DIR: infrastructure/environments/dev
+
+jobs:
+  pipeline:
+    name: validate, scan and integration-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install test dependencies
+        run: python -m pip install pytest
+
+      - name: Set up OpenTofu
+        uses: opentofu/setup-tofu@v1
+        with:
+          tofu_version: 1.12.6
+
+      - name: Unit tests
+        run: make test
+
+      - name: OpenTofu formatting
+        run: make fmt-check
+
+      - name: OpenTofu validation
+        run: |
+          make init
+          make validate
+
+      - name: Trivy misconfiguration report
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scanners: misconfig
+          exit-code: 0
+          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+
+      - name: Trivy security gate (HIGH and CRITICAL fail the build)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scanners: misconfig
+          exit-code: 1
+          severity: HIGH,CRITICAL
+
+      - name: Start Floci
+        run: |
+          docker compose up -d
+          for attempt in $(seq 1 30); do
+            if curl -sf http://localhost:4566/ > /dev/null; then
+              echo "Floci is up"
+              break
+            fi
+            if [ "$attempt" = "30" ]; then
+              echo "Floci did not become reachable"
+              docker compose logs floci
+              exit 1
+            fi
+            sleep 2
+          done
+
+      - name: OpenTofu plan against Floci
+        run: make plan TF_ARGS=-input=false
+
+      - name: Apply infrastructure
+        run: make apply AUTO_APPROVE=true
+
+      - name: Integration tests
+        run: ./scripts/integration-tests.sh
+
+      - name: Destroy ephemeral infrastructure
+        if: always()
+        continue-on-error: true
+        run: tofu -chdir=$TOFU_DIR destroy -auto-approve -input=false
