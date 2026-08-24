@@ -1,0 +1,55 @@
+{
+  "title": "CloudForge Overview",
+  "uid": "cloudforge-overview",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "refresh": "15s",
+  "time": { "from": "now-30m", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Dead-letter queue depth (must be 0)",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 6 },
+      "targets": [{ "expr": "max(cloudforge_sqs_messages{kind=\"dlq\"})", "refId": "A" }],
+      "fieldConfig": { "defaults": { "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "red", "value": 1 } ] } }, "overrides": [] }
+    },
+    {
+      "id": 2,
+      "title": "Jobs queue depth",
+      "type": "stat",
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 6 },
+      "targets": [{ "expr": "max(cloudforge_sqs_messages{kind=\"main\",queue=~\".*jobs.*\"})", "refId": "A" }]
+    },
+    {
+      "id": 3,
+      "title": "API health",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 6 },
+      "targets": [{ "expr": "min(cloudforge_api_up)", "refId": "A" }],
+      "fieldConfig": { "defaults": { "thresholds": { "mode": "absolute", "steps": [ { "color": "red", "value": null }, { "color": "green", "value": 1 } ] } }, "overrides": [] }
+    },
+    {
+      "id": 4,
+      "title": "DynamoDB items per table",
+      "type": "timeseries",
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 6 },
+      "targets": [{ "expr": "cloudforge_dynamodb_items", "legendFormat": "{{table}}", "refId": "A" }]
+    },
+    {
+      "id": 5,
+      "title": "S3 objects per bucket",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 6, "w": 12, "h": 7 },
+      "targets": [{ "expr": "cloudforge_s3_objects", "legendFormat": "{{bucket}}", "refId": "A" }]
+    },
+    {
+      "id": 6,
+      "title": "Recent Lambda errors by function",
+      "type": "barchart",
+      "gridPos": { "x": 12, "y": 6, "w": 12, "h": 7 },
+      "targets": [{ "expr": "sum by (function) (cloudforge_lambda_recent_errors)", "legendFormat": "{{function}}", "refId": "A" }]
+    }
+  ]
+}

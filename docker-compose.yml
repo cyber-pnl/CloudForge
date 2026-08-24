@@ -10,3 +10,45 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     user: root
+
+  exporter:
+    build: ./observability/exporter
+    container_name: cloudforge-exporter
+    ports:
+      - "9877:9877"
+    environment:
+      FLOCI_ENDPOINT: http://floci:4566
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      API_HEALTH_URL: http://floci:4566/_localstack/health
+      POLL_INTERVAL: "15"
+    depends_on:
+      - floci
+
+  prometheus:
+    image: prom/prometheus:v3.9.1
+    container_name: cloudforge-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./observability/prometheus/rules.yml:/etc/prometheus/rules.yml:ro
+    depends_on:
+      - exporter
+
+  grafana:
+    image: grafana/grafana:12.4.2
+    container_name: cloudforge-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus

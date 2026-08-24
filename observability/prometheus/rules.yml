@@ -1,0 +1,18 @@
+groups:
+  - name: cloudforge
+    rules:
+      - alert: DeadLetterQueueNotEmpty
+        expr: max(cloudforge_sqs_messages{kind="dlq"}) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Dead-letter queue holds messages"
+          description: "A job failed permanently after retries and must be investigated."
+      - alert: ApiDown
+        expr: min(cloudforge_api_up) < 1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "API health probe failing"
