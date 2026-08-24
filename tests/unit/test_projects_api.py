@@ -138,3 +138,10 @@ def test_requests_without_token_are_401(tables):
     response = projects.handler(api_event("GET", token=None), None)
 
     assert response["statusCode"] == 401
+
+
+def test_preflight_options_bypasses_auth(tables):
+    response = projects.handler(api_event("OPTIONS", token=None, resource="/projects"), None)
+
+    assert response["statusCode"] == 204
+    assert response["headers"]["Access-Control-Allow-Origin"] == "*"

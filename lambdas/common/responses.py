@@ -2,6 +2,12 @@
 
 import json
 
+CORS_HEADERS = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+    "Access-Control-Allow-Headers": "Authorization,Content-Type",
+}
+
 
 class ApiError(Exception):
     def __init__(self, status, code, message):
@@ -17,9 +23,14 @@ class ApiError(Exception):
 def json_response(status, body):
     return {
         "statusCode": status,
-        "headers": {"Content-Type": "application/json"},
+        "headers": {"Content-Type": "application/json", **CORS_HEADERS},
         "body": json.dumps(body, default=str),
     }
+
+
+def preflight():
+    """Answer a CORS preflight: browsers send OPTIONS without credentials."""
+    return {"statusCode": 204, "headers": dict(CORS_HEADERS), "body": ""}
 
 
 def bad_request(message):

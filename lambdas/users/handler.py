@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 
 from auth import require_auth
 from clients import table
-from responses import ApiError, conflict, json_response, not_found, server_error
+from responses import ApiError, conflict, json_response, not_found, preflight, server_error
 from validation import parse_body, require_email, require_fields
 
 
@@ -81,8 +81,10 @@ def handle_item(method, dynamo, event, user_id):
 
 def handler(event, context):
     try:
-        require_auth(event)
         method = event.get("httpMethod", "")
+        if method == "OPTIONS":
+            return preflight()
+        require_auth(event)
         user_id = (event.get("pathParameters") or {}).get("id")
         dynamo = table(os.environ["TABLE_NAME"])
         if user_id:

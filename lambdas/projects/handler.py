@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 from auth import require_auth
 from clients import artifact_bucket, s3, table
 from lifecycle import VALID_STATUSES, assert_transition
-from responses import ApiError, bad_request, conflict, json_response, not_found, server_error
+from responses import ApiError, bad_request, conflict, json_response, not_found, preflight, server_error
 from validation import parse_body, require_fields
 
 MAX_ARTIFACT_BYTES = 5 * 1024 * 1024
@@ -136,8 +136,10 @@ def handle_artifacts(method, dynamo, event, project_id):
 
 def handler(event, context):
     try:
-        require_auth(event)
         method = event.get("httpMethod", "")
+        if method == "OPTIONS":
+            return preflight()
+        require_auth(event)
         params = event.get("pathParameters") or {}
         project_id = params.get("id")
         dynamo = table(os.environ["TABLE_NAME"])

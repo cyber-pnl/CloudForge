@@ -87,3 +87,10 @@ def test_requests_without_token_are_401(table):
     response = users.handler(api_event("GET", token=None), None)
 
     assert response["statusCode"] == 401
+
+
+def test_preflight_options_bypasses_auth(table):
+    response = users.handler(api_event("OPTIONS", token=None), None)
+
+    assert response["statusCode"] == 204
+    assert response["headers"]["Access-Control-Allow-Origin"] == "*"
