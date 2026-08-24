@@ -41,9 +41,9 @@ Backlog items are tracked here (see `rules/00-project.md`). Each task should hav
 * [x] GitHub Actions
 * [x] Unit tests
 * [x] OpenTofu formatting
-* [ ] OpenTofu validation
-* [ ] OpenTofu plan
-* [ ] Floci integration tests
+* [x] OpenTofu validation
+* [x] OpenTofu plan
+* [x] Floci integration tests
 
 ## Phase 6 — DevSecOps
 
