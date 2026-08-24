@@ -25,6 +25,7 @@ provider "aws" {
     iam        = var.floci_endpoint
     logs       = var.floci_endpoint
     events     = var.floci_endpoint
+    cloudwatch = var.floci_endpoint
   }
 
   skip_credentials_validation = true
@@ -240,6 +241,18 @@ module "notifications_topic" {
   tags = local.common_tags
 }
 
+module "alarms" {
+  source = "../../modules/cloudwatch"
+
+  name_prefix            = "cloudforge-dev"
+  namespace              = "CloudForge/SQS"
+  dlq_name               = "cloudforge-dev-jobs-dlq"
+  api_health_metric_name = "ApiHealth"
+  notify_topic_arn       = module.notifications_topic.topic_arn
+
+  tags = local.common_tags
+}
+
 module "event_bus" {
   source = "../../modules/eventbridge"
 
@@ -368,6 +381,13 @@ resource "aws_lambda_event_source_mapping" "users_stream" {
   starting_position                  = "LATEST"
   batch_size                         = 10
   maximum_batching_window_in_seconds = 1
+
+  # Floci does not persist starting_position, so every refresh reads it back
+  # as absent and would force a replacement (and a stream replay). See
+  # docs/02-infrastructure/local-environment.md.
+  lifecycle {
+    ignore_changes = [starting_position]
+  }
 }
 
 resource "aws_lambda_event_source_mapping" "projects_stream" {
@@ -376,6 +396,10 @@ resource "aws_lambda_event_source_mapping" "projects_stream" {
   starting_position                  = "LATEST"
   batch_size                         = 10
   maximum_batching_window_in_seconds = 1
+
+  lifecycle {
+    ignore_changes = [starting_position]
+  }
 }
 
 resource "aws_lambda_event_source_mapping" "jobs_queue" {

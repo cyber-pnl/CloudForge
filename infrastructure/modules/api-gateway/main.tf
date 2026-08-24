@@ -81,6 +81,13 @@ resource "aws_api_gateway_integration" "this" {
   type                    = "AWS_PROXY"
   integration_http_method = "POST"
   uri                     = each.value.lambda_invoke_arn
+  timeout_milliseconds    = 29000
+
+  # Floci does not read back timeout_milliseconds, so every refresh sees drift.
+  # See docs/02-infrastructure/local-environment.md.
+  lifecycle {
+    ignore_changes = [timeout_milliseconds]
+  }
 }
 
 resource "aws_lambda_permission" "this" {
