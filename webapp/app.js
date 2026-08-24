@@ -42,6 +42,15 @@ async function api(method, path, body) {
     );
   }
   if (response.status === 204) return null;
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    await response.text();
+    throw new Error(
+      `The API answered ${response.status} with a non-JSON body (${contentType.split(";")[0] || "unknown"}). ` +
+        "The base URL is probably incomplete — expected shape: " +
+        "http://localhost:8080/floci/restapis/<api-id>/dev/_user_request_"
+    );
+  }
   const payload = await response.json();
   if (!response.ok) {
     throw new Error(`${payload.error || response.status}: ${payload.message || "request failed"}`);
@@ -263,10 +272,22 @@ function emptyRow(cols) {
 
 /* ---------- boot ---------- */
 
+const EXPECTED_BASE = /^https?:\/\/[^/]+\/floci\/restapis\/[^/]+\/[^/]+\/_user_request_$/;
+
 $("#api-base").value = store.base;
 $("#api-token").value = store.token;
 $("#save-settings").addEventListener("click", () => {
-  store.base = $("#api-base").value;
+  const base = $("#api-base").value.trim().replace(/\/+$/, "");
+  if (!EXPECTED_BASE.test(base)) {
+    toast(
+      "This does not look like a valid execute-plane URL.\nExpected: " +
+        "http://localhost:8080/floci/restapis/<api-id>/dev/_user_request_\n" +
+        "Run 'make ui-url' to print yours.",
+      "err"
+    );
+    return;
+  }
+  store.base = base;
   store.token = $("#api-token").value;
   toast("Settings saved");
   checkConnection().then(() => load(document.querySelector(".tab.active").dataset.tab));
