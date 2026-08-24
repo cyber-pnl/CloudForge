@@ -21,15 +21,29 @@ API_HEALTH_URL = os.environ.get("API_HEALTH_URL", "")
 CW_NAMESPACE_PREFIX = "CloudForge"
 
 STATE_LOCK = threading.Lock()
-METRIC_LINES = []
+METRIC_SECTIONS = {}
+
+
+def publish(section, lines):
+    """Update one metric section so staleness stays bounded per section."""
+    with STATE_LOCK:
+        METRIC_SECTIONS[section] = lines
 
 
 def clients():
     """Lazy AWS clients so the module stays importable without boto3."""
     import boto3
+    from botocore.config import Config
 
+    # Fail fast: without bounded timeouts a poll against an unreachable
+    # endpoint blocks for minutes on retries and freezes every metric.
+    config = Config(
+        connect_timeout=3,
+        read_timeout=5,
+        retries={"total_max_attempts": 2},
+    )
     session = boto3.session.Session(region_name=REGION)
-    common = {"region_name": REGION}
+    common = {"region_name": REGION, "config": config}
     if ENDPOINT:
         common["endpoint_url"] = ENDPOINT
     return {
@@ -183,44 +197,42 @@ def push_to_cloudwatch(cw_clients, push_data):
 
 
 def poll_once(cw_clients):
-    global METRIC_LINES
+    # Health probe first: it is the cheapest signal and must stay fresh even
+    # when the AWS calls below hang on timeouts.
+    api_lines, api_push = collect_api_health()
+    publish("api", api_lines)
+
     queues, tables, buckets, functions = discover_resources(cw_clients)
-    lines = []
-    push = []
+    push = list(api_push)
     try:
         q_lines, q_push = collect_queue_metrics(cw_clients, queues)
-        lines += q_lines
+        publish("queues", q_lines)
         push += q_push
     except Exception as exc:
         LOG.warning("queue metrics failed: %s", exc)
     try:
         t_lines, t_push = collect_table_metrics(cw_clients, tables)
-        lines += t_lines
+        publish("tables", t_lines)
         push += t_push
     except Exception as exc:
         LOG.warning("table metrics failed: %s", exc)
     try:
         b_lines, b_push = collect_bucket_metrics(cw_clients, buckets)
-        lines += b_lines
+        publish("buckets", b_lines)
         push += b_push
     except Exception as exc:
         LOG.warning("bucket metrics failed: %s", exc)
     try:
-        lines += collect_lambda_metrics(cw_clients, functions)
+        publish("lambdas", collect_lambda_metrics(cw_clients, functions))
     except Exception as exc:
         LOG.warning("lambda metrics failed: %s", exc)
-    api_lines, api_push = collect_api_health()
-    lines += api_lines
-    push += api_push
     push_to_cloudwatch(cw_clients, push)
-    with STATE_LOCK:
-        METRIC_LINES = lines
 
 
 def render_metrics():
     with STATE_LOCK:
-        snapshot = list(METRIC_LINES)
-    return "\n".join(snapshot) + "\n"
+        sections = [list(lines) for lines in METRIC_SECTIONS.values()]
+    return "\n".join(line for section in sections for line in section) + "\n"
 
 
 class MetricsHandler(BaseHTTPRequestHandler):

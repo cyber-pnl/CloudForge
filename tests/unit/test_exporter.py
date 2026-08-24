@@ -26,13 +26,21 @@ class TestGauge:
 
 class TestRender:
     def test_empty_state(self):
-        exporter.METRIC_LINES = []
+        exporter.METRIC_SECTIONS.clear()
         assert exporter.render_metrics() == "\n"
 
-    def test_snapshot_joins_lines(self):
-        exporter.METRIC_LINES = ["a 1", "b 2"]
+    def test_sections_render_in_order(self):
+        exporter.METRIC_SECTIONS.clear()
+        exporter.publish("api", ["api_up 1"])
+        exporter.publish("queues", ["q 7"])
         out = exporter.render_metrics()
-        assert out == "a 1\nb 2\n"
+        assert out == "api_up 1\nq 7\n"
+
+    def test_section_replacement(self):
+        exporter.METRIC_SECTIONS.clear()
+        exporter.publish("api", ["old"])
+        exporter.publish("api", ["new"])
+        assert exporter.render_metrics() == "new\n"
 
 
 class TestCollectQueueMetrics:
