@@ -55,12 +55,12 @@ Backlog items are tracked here (see `rules/00-project.md`). Each task should hav
 
 ## Phase 7 — Observability
 
-* [ ] CloudWatch logs
-* [ ] Metrics
-* [ ] Alarms
-* [ ] SQS monitoring
-* [ ] Lambda monitoring
-* [ ] Grafana / Prometheus
+* [x] CloudWatch logs
+* [x] Metrics
+* [x] Alarms
+* [x] SQS monitoring
+* [x] Lambda monitoring
+* [x] Grafana / Prometheus
 
 ## Phase 8 — Reliability
 

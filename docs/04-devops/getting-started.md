@@ -79,9 +79,30 @@ pytest
 
 ## 8. Run security scans
 
+The full scanner matrix with gates (secrets, IaC, dependencies):
+
 ```bash
-trivy fs .
+make security
 ```
+
+## 9. Observability stack
+
+Start the metrics pipeline alongside Floci:
+
+```bash
+docker compose up -d
+```
+
+| Service | URL | Purpose |
+| ------- | --- | ------- |
+| Exporter | http://localhost:9877/metrics | Prometheus-format metrics polled from Floci |
+| Prometheus | http://localhost:9090 | Scrapes the exporter, evaluates alert rules |
+| Grafana | http://localhost:3000 | Provisioned "CloudForge Overview" dashboard (anonymous viewer, admin/admin for editing) |
+
+Alert rules live in `observability/prometheus/rules.yml` — `DeadLetterQueueNotEmpty`
+fires when the dead-letter queue holds messages. CloudWatch alarms defined in
+Terraform document the same intent but are not evaluated by the emulator (see
+`docs/02-infrastructure/local-environment.md`).
 
 ## Cleanup
 

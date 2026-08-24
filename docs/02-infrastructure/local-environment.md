@@ -54,6 +54,11 @@ Floci :4566
     ├── SNS
     ├── EventBridge
     └── API Gateway
+
+Observability stack (docker compose)
+    exporter :9877   polls Floci APIs, serves /metrics, pushes CloudForge/* metrics
+    prometheus :9090 scrapes exporter, evaluates alert rules
+    grafana :3000    dashboards (provisioned, anonymous viewer access)
 ```
 
 ## Emulator-specific behavior
@@ -95,6 +100,19 @@ Rule: every AWS service used in an environment must have its endpoint set to the
 
 * Cognito CRUD operations work, and `COGNITO_USER_POOLS` authorizers can be created on the API — but **authorizers are not enforced at invocation time** (a protected method answers `200` without any token). Authentication is therefore implemented at application level; see ADR-002.
 * `apigateway:DeleteAuthorizer` fails with an unrelated S3 `NoSuchBucket` error; probed authorizers cannot be removed and stay orphaned (inert once no method references them).
+
+### State drift on read-back (verified in Phase 7)
+
+Floci does not persist or read back some attributes that the provider writes. Every refresh then reports drift that would force replacements:
+
+* Lambda event source mappings: `starting_position` is never returned (`GetEventSourceMapping` → `None`). The dev environment adds `lifecycle { ignore_changes = [starting_position] }` to stream ESMs; without it every plan replaces the ESMs and replays stream history.
+* API Gateway integrations: `timeout_milliseconds` reads back as `0`. The api-gateway module pins it explicitly and ignores changes.
+
+### CloudWatch metrics and alarms (verified in Phase 7)
+
+* `PutMetricData`, `ListMetrics`, `GetMetricStatistics`, `PutMetricAlarm`, `DescribeAlarms`, `DeleteAlarms` all work.
+* Alarms are **stored but never evaluated**: state stays `INSUFFICIENT_DATA` with reason `Unchecked` forever. `SetAlarmState` exists for manual transitions. Real alert evaluation therefore lives in Prometheus rules (`observability/prometheus/rules.yml`) which fire correctly against exporter data; CloudWatch alarms remain declarative IaC artifacts documenting intent.
+* The provider block must route `cloudwatch` to Floci via `endpoints {}` like every other service — otherwise calls hit real AWS and fail with `InvalidClientTokenId`.
 
 ### Provider version pinning
 
