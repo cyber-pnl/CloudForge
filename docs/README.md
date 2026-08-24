@@ -15,6 +15,7 @@ docs/
 │   └── local-environment.md  Floci usage and emulator notes
 ├── 04-devops/
 │   ├── ci.md                 CI pipeline stages and principles
+│   ├── deployment-strategy.md Environments, promotion, rollback and DR
 │   └── getting-started.md    Full local setup guide
 ├── 05-security/
 │   └── principles.md         DevSecOps principles

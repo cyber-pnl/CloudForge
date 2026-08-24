@@ -65,8 +65,17 @@ Inspect the plan carefully — do not blindly apply.
 
 ## 6. Deploy locally
 
+The dev environment (see `docs/04-devops/deployment-strategy.md` for staging
+and prod):
+
 ```bash
 tofu apply
+```
+
+To run the integration suite against another environment:
+
+```bash
+TOFU_DIR=infrastructure/environments/staging ./scripts/integration-tests.sh
 ```
 
 ## 7. Run tests

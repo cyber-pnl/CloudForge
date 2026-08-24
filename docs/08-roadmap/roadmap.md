@@ -72,8 +72,8 @@ Backlog items are tracked here (see `rules/00-project.md`). Each task should hav
 
 ## Phase 9 — Production Simulation
 
-* [ ] Staging environment
-* [ ] Production environment
-* [ ] Deployment strategy
-* [ ] Rollback strategy
-* [ ] Disaster recovery scenario
+* [x] Staging environment
+* [x] Production environment
+* [x] Deployment strategy
+* [x] Rollback strategy
+* [x] Disaster recovery scenario

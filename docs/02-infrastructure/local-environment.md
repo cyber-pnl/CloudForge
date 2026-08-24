@@ -105,14 +105,20 @@ Rule: every AWS service used in an environment must have its endpoint set to the
 
 Floci does not persist or read back some attributes that the provider writes. Every refresh then reports drift that would force replacements:
 
-* Lambda event source mappings: `starting_position` is never returned (`GetEventSourceMapping` → `None`). The dev environment adds `lifecycle { ignore_changes = [starting_position] }` to stream ESMs; without it every plan replaces the ESMs and replays stream history.
+* Lambda event source mappings: `starting_position` and `maximum_batching_window_in_seconds` are never returned. The platform module ignores changes on both; without it every plan replaces the ESMs and replays stream history.
 * API Gateway integrations: `timeout_milliseconds` reads back as `0`. The api-gateway module pins it explicitly and ignores changes.
+* CloudWatch alarms: `datapoints_to_alarm` is not persisted; the cloudwatch module ignores changes on it.
 
 ### CloudWatch metrics and alarms (verified in Phase 7)
 
 * `PutMetricData`, `ListMetrics`, `GetMetricStatistics`, `PutMetricAlarm`, `DescribeAlarms`, `DeleteAlarms` all work.
 * Alarms are **stored but never evaluated**: state stays `INSUFFICIENT_DATA` with reason `Unchecked` forever. `SetAlarmState` exists for manual transitions. Real alert evaluation therefore lives in Prometheus rules (`observability/prometheus/rules.yml`) which fire correctly against exporter data; CloudWatch alarms remain declarative IaC artifacts documenting intent.
 * The provider block must route `cloudwatch` to Floci via `endpoints {}` like every other service — otherwise calls hit real AWS and fail with `InvalidClientTokenId`.
+* `TagResource` on an alarm returns HTTP 200 with an empty body; AWS SDK Go clients fail deserializing the response even though the operation succeeds server-side (verified in Phase 9).
+
+### Multi-account isolation (verified in Phase 9)
+
+The access key selects the account (`000000000001` gets its own resources), but only for **control-plane** APIs. The REST API execute plane resolves APIs exclusively in the default account, so an API deployed under another account cannot be invoked over HTTP. Environments therefore share the default account and rely on name prefixes (see ADR-004). `scripts/purge_floci_account.py` removes prefixed resources from a non-default account.
 
 ### Provider version pinning
 

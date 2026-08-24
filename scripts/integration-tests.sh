@@ -5,6 +5,10 @@ set -euo pipefail
 
 TOFU_DIR="${TOFU_DIR:-infrastructure/environments/dev}"
 ENDPOINT="${FLOCI_ENDPOINT:-http://localhost:4566}"
+# The floci access key selects the isolated account (dev uses the "test" key).
+export AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID:-test}"
+export AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY:-test}"
+export AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-east-1}"
 BASE="$ENDPOINT/restapis/$(tofu -chdir="$TOFU_DIR" output -raw rest_api_id)/dev/_user_request_"
 AUTH="Authorization: Bearer ${API_TOKEN:-local-dev-token}"
 BUCKET="$(tofu -chdir="$TOFU_DIR" output -raw artifacts_bucket_id)"
