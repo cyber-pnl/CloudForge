@@ -106,7 +106,27 @@ All services run locally through Floci. See [docs/01-architecture/](docs/01-arch
 
 ## Quick Start
 
-Requirements: Docker, Docker Compose, OpenTofu, AWS CLI, Python, Git, Trivy.
+### Prerequisites
+
+| Tool | Version tested | Notes |
+| ---- | -------------- | ----- |
+| Docker + Compose v2 | 29.x | runs Floci, observability stack and the web console |
+| OpenTofu | 1.12.6 | pinned in CI; `opentofu` package or [opentofu.org](https://opentofu.org/docs/intro/install/) |
+| Python | 3.13+ (3.14 works) | unit tests only; Lambda runtime itself is the `python:3.13` image |
+| AWS CLI v2 | any | teardown (`aws s3 rm`) and ad-hoc debugging |
+| Trivy | 0.73.0 | security gates; [install guide](https://trivy.dev/latest/getting-started/installation/) |
+| Git | any | |
+
+Python test dependencies are pinned in `requirements-dev.txt` — install them
+in a virtual environment (PEP 668: system installs are blocked on modern
+distros and the Makefile never mutates your interpreter):
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements-dev.txt
+```
+
+### Launch
 
 ```bash
 # 1. Start the local AWS environment
@@ -122,7 +142,7 @@ tofu apply
 
 # 4. Run tests and security scan (from repository root)
 pytest
-trivy fs .
+make security
 
 # 5. Open the web console (users, projects, artifacts)
 docker compose up -d webapp && make ui-url
