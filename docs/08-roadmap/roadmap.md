@@ -38,9 +38,9 @@ Backlog items are tracked here (see `rules/00-project.md`). Each task should hav
 
 ## Phase 5 — CI
 
-* [ ] GitHub Actions
-* [ ] Unit tests
-* [ ] OpenTofu formatting
+* [x] GitHub Actions
+* [x] Unit tests
+* [x] OpenTofu formatting
 * [ ] OpenTofu validation
 * [ ] OpenTofu plan
 * [ ] Floci integration tests
