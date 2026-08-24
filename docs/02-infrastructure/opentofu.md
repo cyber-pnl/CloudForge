@@ -35,7 +35,7 @@ Additional modules are added in later phases following the same pattern.
 | `dynamodb`   | table (PAY_PER_REQUEST), point-in-time recovery | Application data tables. |
 | `iam`        | Lambda execution role with scoped inline policy | Least-privilege roles; extra statements are passed per function and restricted to the resources it owns. |
 | `lambda`     | function, CloudWatch log group with retention | Deployment packages are zipped from source directories via the `archive` provider. |
-| `api-gateway`| REST API, resources/methods, AWS_PROXY integrations, deployment, stage | Top-level routes backed by Lambda proxy integrations. |
+| `api-gateway`| REST API, nested resources (`/{id}` and sub-resources), AWS_PROXY integrations, deployment, stage | Routes are declared as maps per depth level; every route is backed by a Lambda proxy integration. |
 | `sqs`        | queue | Asynchronous processing; optional CMK encryption. |
 | `sns`        | topic | Notifications fan-out; optional CMK encryption. |
 | `eventbridge`| custom bus, rules with single target each | Domain events routing; patterns are passed as JSON strings. |

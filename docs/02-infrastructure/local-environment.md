@@ -91,6 +91,11 @@ Rule: every AWS service used in an environment must have its endpoint set to the
   PYTHONPATH=lambdas/dispatcher/build python3 -c "import boto3; ..."
   ```
 
+### Cognito and authorizers (verified in Phase 4)
+
+* Cognito CRUD operations work, and `COGNITO_USER_POOLS` authorizers can be created on the API — but **authorizers are not enforced at invocation time** (a protected method answers `200` without any token). Authentication is therefore implemented at application level; see ADR-002.
+* `apigateway:DeleteAuthorizer` fails with an unrelated S3 `NoSuchBucket` error; probed authorizers cannot be removed and stay orphaned (inert once no method references them).
+
 ### Provider version pinning
 
 The project pins `hashicorp/aws` to `~> 5.0`, matching the provider constraint of Floci's own OpenTofu compatibility suite. Provider 6.45+ regresses on API Gateway v1 (`GetRestApi`/`PutRestApi` response fields, upstream issues floci-io/floci#855 and #999): under 6.x the `aws_api_gateway_rest_api` waiter fails with `unexpected state ''`. Revisit when Floci ships fixes for these issues.

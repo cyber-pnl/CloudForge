@@ -30,11 +30,11 @@ Backlog items are tracked here (see `rules/00-project.md`). Each task should hav
 
 ## Phase 4 — Application
 
-* [ ] Users API
-* [ ] Projects API
-* [ ] Authentication model
-* [ ] Project lifecycle
-* [ ] S3 artifact storage
+* [x] Users API
+* [x] Projects API
+* [x] Authentication model
+* [x] Project lifecycle
+* [x] S3 artifact storage
 
 ## Phase 5 — CI
 

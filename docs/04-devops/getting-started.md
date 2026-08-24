@@ -106,11 +106,27 @@ make up
 make init
 make fmt
 make validate
-make plan
-make apply
+make plan              # runs make package first
+make apply             # runs make package first; add AUTO_APPROVE=true for non-interactive runs
 make test
 make security
 make destroy
 ```
 
 The goal is to make the project usable without requiring developers to remember every underlying command.
+
+## Calling the APIs
+
+The application APIs require bearer authentication (see ADR-002). The local execute-plane URL differs from real AWS:
+
+```bash
+BASE=http://localhost:4566/restapis/<api_id>/dev/_user_request_
+TOKEN='Authorization: Bearer local-dev-token'
+
+curl -H "$TOKEN" "$BASE/users"                                   # list users
+curl -XPOST -H "$TOKEN" -d '{"name":"Ada","email":"ada@example.com"}' "$BASE/users"
+curl -XPOST -H "$TOKEN" -d '{"name":"Apollo","owner":"<user_id>"}' "$BASE/projects"
+curl -XPUT  -H "$TOKEN" -d '{"name":"Apollo","owner":"<user_id>","status":"active"}' "$BASE/projects/<project_id>"
+```
+
+Requests without a valid token are rejected with `401`.
