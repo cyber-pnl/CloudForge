@@ -68,6 +68,20 @@ for _ in $(seq 1 15); do
 done
 check "stream produced artifact and drained queue" 1 "$STREAM_OK"
 
+echo "== observability =="
+EXPORTER_URL="${EXPORTER_URL:-http://localhost:9877}"
+PROMETHEUS_URL="${PROMETHEUS_URL:-http://localhost:9090}"
+GRAFANA_URL="${GRAFANA_URL:-http://localhost:3000}"
+METRICS_OK=0
+if curl -sf "$EXPORTER_URL/metrics" | grep -q 'cloudforge_sqs_messages'; then METRICS_OK=1; fi
+check "exporter exposes metrics" 1 "$METRICS_OK"
+PROM_OK=0
+if curl -s --get "$PROMETHEUS_URL/api/v1/query" --data-urlencode 'query=cloudforge_dynamodb_items' | grep -q '"result"'; then PROM_OK=1; fi
+check "prometheus serves queries" 1 "$PROM_OK"
+GRAFANA_OK=0
+if curl -sf "$GRAFANA_URL/api/health" > /dev/null; then GRAFANA_OK=1; fi
+check "grafana healthy" 1 "$GRAFANA_OK"
+
 echo
 if [ "$FAILED" -ne 0 ]; then
   echo "integration tests: $FAILED failed, $PASS passed"
