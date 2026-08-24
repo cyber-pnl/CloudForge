@@ -113,6 +113,16 @@ module "projects_role" {
       Effect   = "Allow"
       Action   = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem", "dynamodb:DeleteItem", "dynamodb:Query"]
       Resource = [module.projects_table.table_arn]
+    },
+    {
+      Effect   = "Allow"
+      Action   = ["s3:PutObject", "s3:DeleteObject"]
+      Resource = ["${module.artifacts_bucket.bucket_arn}/projects/*"]
+    },
+    {
+      Effect   = "Allow"
+      Action   = ["s3:ListBucket"]
+      Resource = [module.artifacts_bucket.bucket_arn]
     }
   ]
 
@@ -130,6 +140,7 @@ module "users_function" {
   environment_variables = {
     SERVICE_NAME = "users"
     TABLE_NAME   = module.users_table.table_name
+    API_TOKEN    = var.api_token
   }
 
   tags = local.common_tags
@@ -144,8 +155,11 @@ module "projects_function" {
   role_arn      = module.projects_role.role_arn
 
   environment_variables = {
-    SERVICE_NAME = "projects"
-    TABLE_NAME   = module.projects_table.table_name
+    SERVICE_NAME     = "projects"
+    TABLE_NAME       = module.projects_table.table_name
+    USERS_TABLE_NAME = module.users_table.table_name
+    ARTIFACT_BUCKET  = var.artifacts_bucket_name
+    API_TOKEN        = var.api_token
   }
 
   tags = local.common_tags
@@ -156,18 +170,42 @@ module "api" {
 
   api_name = "cloudforge-dev-api"
 
-  routes = [
-    {
+  routes = {
+    users = {
       path_part         = "users"
       lambda_name       = module.users_function.function_name
       lambda_invoke_arn = module.users_function.invoke_arn
-    },
-    {
+    }
+    projects = {
       path_part         = "projects"
       lambda_name       = module.projects_function.function_name
       lambda_invoke_arn = module.projects_function.invoke_arn
-    },
-  ]
+    }
+  }
+
+  child_routes = {
+    user_id = {
+      parent            = "users"
+      path_part         = "{id}"
+      lambda_name       = module.users_function.function_name
+      lambda_invoke_arn = module.users_function.invoke_arn
+    }
+    project_id = {
+      parent            = "projects"
+      path_part         = "{id}"
+      lambda_name       = module.projects_function.function_name
+      lambda_invoke_arn = module.projects_function.invoke_arn
+    }
+  }
+
+  grandchild_routes = {
+    project_artifacts = {
+      parent            = "project_id"
+      path_part         = "artifacts"
+      lambda_name       = module.projects_function.function_name
+      lambda_invoke_arn = module.projects_function.invoke_arn
+    }
+  }
 
   tags = local.common_tags
 }

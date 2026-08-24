@@ -1,3 +1,4 @@
 aws_region            = "us-east-1"
 floci_endpoint        = "http://localhost:4566"
 artifacts_bucket_name = "cloudforge-dev-artifacts"
+api_token             = "local-dev-token" # placeholder for local development only (ADR-002)

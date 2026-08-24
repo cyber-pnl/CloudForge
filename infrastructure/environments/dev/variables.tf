@@ -15,3 +15,10 @@ variable "artifacts_bucket_name" {
   type        = string
   default     = "cloudforge-dev-artifacts"
 }
+
+variable "api_token" {
+  description = "Bearer token required by the application APIs. Local development value only, see ADR-002."
+  type        = string
+  default     = "local-dev-token"
+  sensitive   = true
+}
