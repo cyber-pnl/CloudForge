@@ -68,6 +68,19 @@ Findings may only be accepted through the documented exception procedure (`rules
 
 Application artifacts should be built once and promoted between environments rather than rebuilt differently for each environment.
 
+## Security gates
+
+`make security` (and the CI pipeline) enforces four layers:
+
+| Gate | Scope | Failure condition |
+| ---- | ----- | ----------------- |
+| Secrets | all tracked files | any secret finding |
+| IaC misconfiguration | `*.tf` files | HIGH or CRITICAL |
+| Dependencies | vendored lambda packages (`lambdas/*/build`) and lockfiles | HIGH or CRITICAL |
+| Accepted findings | documented exceptions only | ledger entry required |
+
+Lambda packages are built before scanning so dependency scanning inspects what actually ships. The local `terraform.tfstate` is excluded from the secrets gate: OpenTofu stores sensitive variables there by design, the file is verified to stay git-ignored, and no other file benefits from that exception.
+
 ## Accepted findings
 
 Security findings that are intentionally accepted must be documented here, with the narrowest possible scope (`rules/03-security.md`). Emulator limitations are verified through CLI probes before acceptance (`skills/floci/SKILL.md`).

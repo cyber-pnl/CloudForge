@@ -63,10 +63,12 @@ The plan validates the full provider interaction against the emulator; the apply
 
 ## Trivy gate policy
 
-The scan runs twice:
+The scan runs once as a full report, then as three independent gates:
 
-1. **Report** — every finding is printed regardless of severity.
-2. **Gate** — the build fails only on `HIGH` or `CRITICAL` misconfigurations.
+1. **Report** — every finding is printed regardless of type or severity.
+2. **Secrets gate** — any secret finding fails the build. The local `terraform.tfstate` is excluded from this gate because OpenTofu stores sensitive variables there by design; the file must stay git-ignored, which the pipeline verifies explicitly.
+3. **IaC misconfiguration gate** — the build fails on `HIGH` or `CRITICAL`.
+4. **Dependency vulnerability gate** — the build fails on `HIGH` or `CRITICAL`. Lambda packages are built before scanning so vendored dependencies (`lambdas/*/build`) are actually inspected.
 
 Lower severities are handled through the accepted-findings ledger in `docs/05-security/principles.md`; they must be either fixed or documented there, never ignored silently.
 
@@ -76,6 +78,7 @@ Lower severities are handled through the accepted-findings ledger in `docs/05-se
 * Fail fast on deterministic validation failures.
 * Do not hide errors.
 * Security checks must never be disabled to make CI pass.
+* Every exception to a gate is narrow (one file, one severity range) and justified in documentation.
 
 > **Fail fast, validate early, never deploy untested infrastructure.**
 

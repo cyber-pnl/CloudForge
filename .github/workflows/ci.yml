@@ -52,21 +52,39 @@ jobs:
           make init
           make validate
 
-      - name: Trivy misconfiguration report
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          scan-type: fs
-          scanners: misconfig
-          exit-code: 0
-          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+      - name: Build lambda packages
+        run: make package
 
-      - name: Trivy security gate (HIGH and CRITICAL fail the build)
+      - name: Trivy full report
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scanners: misconfig,secret,vuln
+          exit-code: 0
+
+      - name: Security gate — secrets (any finding fails)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scanners: secret
+          skip-files: "**/terraform.tfstate"
+          exit-code: 1
+
+      - name: Security gate — IaC misconfigurations (HIGH and CRITICAL fail)
         uses: aquasecurity/trivy-action@0.28.0
         with:
           scan-type: fs
           scanners: misconfig
-          exit-code: 1
           severity: HIGH,CRITICAL
+          exit-code: 1
+
+      - name: Security gate — dependency vulnerabilities (HIGH and CRITICAL fail)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          exit-code: 1
 
       - name: Start Floci
         run: |

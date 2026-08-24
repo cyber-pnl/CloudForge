@@ -47,11 +47,11 @@ Backlog items are tracked here (see `rules/00-project.md`). Each task should hav
 
 ## Phase 6 — DevSecOps
 
-* [ ] Trivy filesystem scan
-* [ ] IaC misconfiguration scan
-* [ ] Secret detection
-* [ ] Dependency scanning
-* [ ] Security gates
+* [x] Trivy filesystem scan
+* [x] IaC misconfiguration scan
+* [x] Secret detection
+* [x] Dependency scanning
+* [x] Security gates
 
 ## Phase 7 — Observability
 
