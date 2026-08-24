@@ -64,11 +64,11 @@ Backlog items are tracked here (see `rules/00-project.md`). Each task should hav
 
 ## Phase 8 — Reliability
 
-* [ ] Failure injection
-* [ ] Incident scenarios
-* [ ] Runbooks
-* [ ] Recovery procedures
-* [ ] Post-mortems
+* [x] Failure injection
+* [x] Incident scenarios
+* [x] Runbooks
+* [x] Recovery procedures
+* [x] Post-mortems
 
 ## Phase 9 — Production Simulation
 

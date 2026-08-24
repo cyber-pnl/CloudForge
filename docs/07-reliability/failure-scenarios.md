@@ -2,34 +2,47 @@
 
 CloudForge is also designed as an SRE/DevOps laboratory.
 
-The project includes controlled failure scenarios to demonstrate operational maturity, not only deployment skills.
+The project includes controlled failure scenarios to demonstrate operational maturity, not only deployment skills. Both scenarios below are reproducible with one command against the live environment.
 
-## Example scenario
+## Scenario 1 — poison job → retries → DLQ → alert
 
 ```text
-Worker Lambda
-     │
-     X
-   FAILURE
+Poison job (simulate_failure in the canonical envelope)
      │
      ▼
-     SQS
+Worker fails 3 deliveries (maxReceiveCount)
      │
      ▼
-    DLQ
+SQS redrive moves it to the DLQ
      │
      ▼
-CloudWatch Alarm
+Exporter metric cloudforge_sqs_messages{kind="dlq"} increases
      │
      ▼
-  Incident
+Prometheus alert DeadLetterQueueNotEmpty fires
 ```
 
-Example incident: **INC-001 — Worker Lambda unavailable**
+Reproduce: `make inject-poison`. Full lifecycle documented in
+[INC-001](incidents/INC-001-poison-job-to-dlq.md).
+
+## Scenario 2 — emulator outage → health probe → alert
+
+```text
+Emulator container stops
+     │
+     ▼
+cloudforge_api_up drops to 0 within one poll cycle
+     │
+     ▼
+Prometheus alert ApiDown pending, firing after 2m
+```
+
+Reproduce: `make inject-outage` (stops the emulator for ~150 s and restarts it).
+Full lifecycle documented in [INC-002](incidents/INC-002-emulator-outage.md).
 
 ## Incident documentation
 
-Each documented incident should contain:
+Each incident report follows the same eight-part lifecycle:
 
 1. Detection
 2. Impact
@@ -40,4 +53,6 @@ Each documented incident should contain:
 7. Prevention
 8. Post-mortem
 
-See `skills/incident-response/SKILL.md` for the full procedure and `observability.md` for the detection signals.
+See `skills/incident-response/SKILL.md` for the procedure,
+[runbooks](runbooks.md) for operations, and [observability](observability.md)
+for detection signals.
