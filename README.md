@@ -133,6 +133,7 @@ Full setup guide: [docs/04-devops/getting-started.md](docs/04-devops/getting-sta
 Cleanup:
 
 ```bash
+aws s3 rm s3://cloudforge-dev-artifacts --recursive   # the emulator refuses to delete non-empty buckets
 tofu destroy
 docker compose down
 ```

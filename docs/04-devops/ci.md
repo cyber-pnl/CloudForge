@@ -61,6 +61,8 @@ The workflow is responsible for validating the complete project.
 
 The plan validates the full provider interaction against the emulator; the apply stage deploys the stack so the integration tests can exercise real endpoints (`scripts/integration-tests.sh`). The final destroy only cleans the ephemeral runner environment — its failure never masks a pipeline failure.
 
+Before destroying, the teardown empties `s3://cloudforge-dev-artifacts` recursively: the emulator refuses to delete a non-empty bucket, and every integration run uploads artifacts, so the destroy would otherwise always fail. The same rule applies to local cleanups — empty the bucket before running `tofu destroy`.
+
 ## Trivy gate policy
 
 The scan runs once as a full report, then as three independent gates:
