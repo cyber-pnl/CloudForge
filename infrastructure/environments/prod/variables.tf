@@ -19,7 +19,7 @@ variable "account_id" {
 variable "artifacts_bucket_name" {
   description = "Name of the artifacts S3 bucket."
   type        = string
-  default     = "cloudforge-dev-artifacts"
+  default     = "cloudforge-prod-artifacts"
 }
 
 variable "api_token" {

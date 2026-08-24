@@ -24,7 +24,7 @@ output "projects_table_name" {
 }
 
 output "api_invoke_url" {
-  description = "Base invoke URL of the dev API stage."
+  description = "Base invoke URL of the staging API stage."
   value       = module.platform.api_invoke_url
 }
 

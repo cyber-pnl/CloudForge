@@ -39,8 +39,8 @@ provider "aws" {
 module "platform" {
   source = "../../modules/platform"
 
-  name_prefix           = "cloudforge-dev"
-  environment           = "dev"
+  name_prefix           = "cloudforge-prod"
+  environment           = "staging"
   artifacts_bucket_name = var.artifacts_bucket_name
   api_token             = var.api_token
   lambdas_dir           = "${path.module}/../../../lambdas"

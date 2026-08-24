@@ -4,6 +4,12 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      deploy_staging:
+        description: "Promote the validated build to staging after the dev pipeline"
+        type: boolean
+        default: false
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -22,7 +28,7 @@ jobs:
   pipeline:
     name: validate, scan and integration-test
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
 
     steps:
       - name: Checkout
@@ -110,6 +116,13 @@ jobs:
 
       - name: Integration tests
         run: ./scripts/integration-tests.sh
+
+      - name: Promote to staging (manual dispatch only)
+        if: inputs.deploy_staging == true
+        run: |
+          tofu -chdir=infrastructure/environments/staging init -input=false
+          tofu -chdir=infrastructure/environments/staging apply -auto-approve -input=false
+          TOFU_DIR=infrastructure/environments/staging ./scripts/integration-tests.sh
 
       - name: Destroy ephemeral infrastructure
         if: always()

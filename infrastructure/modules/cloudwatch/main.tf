@@ -18,6 +18,11 @@ resource "aws_cloudwatch_metric_alarm" "dlq_not_empty" {
   ok_actions    = [var.notify_topic_arn]
 
   tags = var.tags
+
+  # Floci does not persist datapoints_to_alarm; ignoring keeps plans clean.
+  lifecycle {
+    ignore_changes = [datapoints_to_alarm]
+  }
 }
 
 resource "aws_cloudwatch_metric_alarm" "api_down" {
@@ -36,4 +41,8 @@ resource "aws_cloudwatch_metric_alarm" "api_down" {
   ok_actions    = [var.notify_topic_arn]
 
   tags = var.tags
+
+  lifecycle {
+    ignore_changes = [datapoints_to_alarm]
+  }
 }
