@@ -141,7 +141,9 @@ jobs:
           done
 
       - name: OpenTofu plan against Floci
-        run: make plan TF_ARGS=-input=false
+        run: |
+           tofu -chdir=$TOFU_DIR init -input=false
+           make plan TF_ARGS=-input=false
 
       - name: Apply infrastructure
         run: make apply AUTO_APPROVE=true
