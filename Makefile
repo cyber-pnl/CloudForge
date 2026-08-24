@@ -4,7 +4,7 @@ TOFU_DIR := infrastructure/environments/dev
 TF_ARGS  ?=
 AUTO_APPROVE ?= false
 
-.PHONY: help up down init fmt fmt-check validate plan apply destroy package test test-integration security
+.PHONY: help up down init fmt fmt-check validate plan apply destroy package test test-integration security inject-poison inject-outage
 
 help:
 	@printf "%-16s %s\n" \
@@ -20,7 +20,15 @@ help:
 		destroy "destroy local infrastructure" \
 		test "install dev requirements and run unit tests" \
 		test-integration "run end-to-end integration tests against floci" \
-		security "run trivy report plus secret, iac and dependency gates"
+		security "run trivy report plus secret, iac and dependency gates" \
+		inject-poison "inject a poison job and watch it reach the dlq" \
+		inject-outage "stop the emulator briefly to exercise api health alerting"
+
+inject-poison:
+	./scripts/failure-injection.sh poison-job
+
+inject-outage:
+	./scripts/failure-injection.sh emulator-outage
 
 up:
 	$(COMPOSE) up -d
