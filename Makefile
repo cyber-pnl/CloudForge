@@ -1,6 +1,8 @@
 .DEFAULT_GOAL := help
 COMPOSE  := docker compose
 TOFU_DIR := infrastructure/environments/dev
+TF_ARGS  ?=
+AUTO_APPROVE ?= false
 
 .PHONY: help up down init fmt fmt-check validate plan apply destroy package test security
 
@@ -40,9 +42,11 @@ validate:
 package:
 	@for src in lambdas/*/; do \
 		name=$$(basename $$src); \
+		if [ "$$name" = "common" ]; then continue; fi; \
 		dest=lambdas/$$name/build; \
 		rm -rf $$dest && mkdir -p $$dest; \
 		cp $$src*.py $$dest/; \
+		cp lambdas/common/*.py $$dest/; \
 		if [ -f $$src/requirements.txt ]; then \
 			echo "Vendoring dependencies for $$name"; \
 			python3 -m pip install -q --disable-pip-version-check -r $$src/requirements.txt -t $$dest; \
@@ -51,10 +55,10 @@ package:
 	@echo "Lambda packages built under lambdas/*/build"
 
 plan: package
-	tofu -chdir=$(TOFU_DIR) plan
+	tofu -chdir=$(TOFU_DIR) plan $(TF_ARGS)
 
 apply: package
-	tofu -chdir=$(TOFU_DIR) apply
+	tofu -chdir=$(TOFU_DIR) apply -auto-approve=$(AUTO_APPROVE)
 
 destroy:
 	tofu -chdir=$(TOFU_DIR) destroy
