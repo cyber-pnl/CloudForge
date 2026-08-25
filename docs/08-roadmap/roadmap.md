@@ -77,3 +77,12 @@ Backlog items are tracked here (see `rules/00-project.md`). Each task should hav
 * [x] Deployment strategy
 * [x] Rollback strategy
 * [x] Disaster recovery scenario
+
+## Phase 10 — Multi-Cloud (Scaleway via Feint)
+
+* [ ] Feint emulator probes (capabilities, routes, provider apply)
+* [ ] Multi-cloud topology decision (ADR-005)
+* [ ] Feint service in the local environment
+* [ ] Scaleway warm-standby stack provisioned with OpenTofu
+* [ ] Multi-cloud CI validation (single workflow constraint kept)
+* [ ] Documentation (emulator quirks, DR extension)

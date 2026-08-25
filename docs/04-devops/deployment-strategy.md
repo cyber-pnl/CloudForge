@@ -6,14 +6,20 @@ back out of a bad deployment. The topology is defined in
 
 ## Environments
 
-| Environment | Directory | Lifetime | Deployed by |
-| ----------- | --------- | -------- | ----------- |
-| dev | `infrastructure/environments/dev` | ephemeral | CI on every push/PR; `make apply` locally |
-| staging | `infrastructure/environments/staging` | long-lived | CI manual dispatch (promotion) or local apply |
-| prod | `infrastructure/environments/prod` | long-lived | explicit local apply only |
+| Environment | Directory | Cloud | Lifetime | Deployed by |
+| ----------- | --------- | ----- | -------- | ----------- |
+| dev | `infrastructure/environments/dev` | AWS (Floci) | ephemeral | CI on every push/PR; `make apply` locally |
+| staging | `infrastructure/environments/staging` | AWS (Floci) | long-lived | CI manual dispatch (promotion) or local apply |
+| prod | `infrastructure/environments/prod` | AWS (Floci) | long-lived | explicit local apply only |
+| scw-dr | `infrastructure/environments/scw-dr` | Scaleway (Feint) | ephemeral | CI on every push/PR; `make apply` locally |
 
-All three wrap the same platform module, so behavior differences come from
-inputs only — never from drifted code.
+The AWS environments all wrap the same platform module, so behavior
+differences come from inputs only — never from drifted code.
+
+The Scaleway environment models a warm-standby / burst-compute site on a
+second cloud provider (ADR-005). It provisions VPC, private network, a
+standby instance and a block volume through the real `scaleway/scaleway`
+provider against the Feint emulator.
 
 ## Deployment flow
 

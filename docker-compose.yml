@@ -11,6 +11,12 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     user: root
 
+  feint:
+    image: ghcr.io/stephrobert/feint:v0.10.0
+    container_name: cloudforge-feint
+    ports:
+      - "4599:4599"
+
   exporter:
     build: ./observability/exporter
     container_name: cloudforge-exporter

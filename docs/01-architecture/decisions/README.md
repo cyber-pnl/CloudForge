@@ -42,4 +42,8 @@ Which options were rejected and why?
 
 | ADR | Title | Status |
 | --- | ----- | ------ |
-| —   | No decision recorded yet | — |
+| [ADR-001](ADR-001-sqs-over-sns.md) | SQS fanout over SNS delivery | Accepted |
+| [ADR-002](ADR-002-application-level-auth.md) | Application-level authentication | Accepted |
+| [ADR-003](ADR-003-observability-stack.md) | Observability stack | Accepted |
+| [ADR-004](ADR-004-environment-topology.md) | Environment topology and promotion model | Accepted |
+| [ADR-005](ADR-005-multicloud-scaleway.md) | Multi-cloud topology: Scaleway warm-standby via Feint | Accepted |

@@ -1,6 +1,6 @@
-# Local AWS Environment (Floci)
+# Local Environment (Floci + Feint)
 
-Floci provides the local AWS environment: AWS-compatible APIs without a real AWS account.
+Floci provides the local AWS environment: AWS-compatible APIs without a real AWS account. Feint provides the local Scaleway environment alongside it.
 
 ## Endpoint
 
@@ -124,6 +124,57 @@ Floci does not persist or read back some attributes that the provider writes. Ev
 * Alarms are **stored but never evaluated**: state stays `INSUFFICIENT_DATA` with reason `Unchecked` forever. `SetAlarmState` exists for manual transitions. Real alert evaluation therefore lives in Prometheus rules (`observability/prometheus/rules.yml`) which fire correctly against exporter data; CloudWatch alarms remain declarative IaC artifacts documenting intent.
 * The provider block must route `cloudwatch` to Floci via `endpoints {}` like every other service — otherwise calls hit real AWS and fail with `InvalidClientTokenId`.
 * `TagResource` on an alarm returns HTTP 200 with an empty body; AWS SDK Go clients fail deserializing the response even though the operation succeeds server-side (verified in Phase 9).
+
+## Feint (Scaleway emulator)
+
+[Feint](https://github.com/stephrobert/feint) provides the local Scaleway
+environment alongside Floci. It is a single-binary emulator serving the
+Scaleway API on port `4599`, started by the same `docker compose up` command
+as Floci.
+
+### Endpoint
+
+```text
+http://localhost:4599
+```
+
+### Health check
+
+```bash
+curl -s localhost:4599/_feint/health | python3 -m json.tool
+```
+
+### How OpenTofu uses Feint
+
+```text
+OpenTofu (scaleway/scaleway provider)
+    │
+    │ Scaleway API  (api_url override)
+    ▼
+Feint :4599
+    │
+    ├── Instance (compute)
+    ├── VPC / VPCgw (networking)
+    ├── Block (block storage)
+    └── IAM (access control)
+```
+
+### Emulator-specific behavior
+
+1. **Control-plane only.** Created servers report API state but never boot
+   (`capabilities.machines: false` unless Incus/OVN is configured). The lab
+   proves reproducible provisioning, not workload execution on Scaleway.
+2. **No Object Storage.** The Scaleway S3-compatible API is not emulated.
+   CloudForge's artifact pipeline therefore stays on AWS/Floci (S3).
+3. **Credentials are never validated.** Feint accepts any signing credentials
+   (`SCWXXXXXXXXXXXXXXXXX` / `11111111-1111-1111-1111-111111111111`) as
+   long as the client can sign requests. They are present only to satisfy
+   client-side signing requirements.
+4. **Volume attachment drift.** The Scaleway provider re-applies the
+   `additional_volume_ids` attribute on every plan when the volume was
+   created in the same apply — the emulator does not persist the attachment
+   state back. This is harmless (idempotent in-place update) and does not
+   affect the destroy path.
 
 ### Multi-account isolation (verified in Phase 9)
 

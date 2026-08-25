@@ -10,7 +10,7 @@ The workflow is responsible for validating the complete project.
 
 ## Jobs
 
-The workflow is split into five GitHub Actions **jobs** so every stage is a
+The workflow is split into six GitHub Actions **jobs** so every stage is a
 separate box on the run page:
 
 ```text
@@ -28,17 +28,23 @@ separate box on the run page:
              │ 4 · Integration  │   floci → plan → apply → e2e
              │   ephemeral dev  │   → destroy (always)
              └────────┬─────────┘
-                      ▼
-             ┌──────────────────┐
-             │ 5 · Promote to   │   workflow_dispatch only,
-             │     staging      │   input deploy_staging = true
-             └──────────────────┘
+                      │
+        ┌─────────────┴──────────────────────┐
+        ▼                                    ▼
+┌──────────────────┐              ┌──────────────────────┐
+│ 5 · Promote to   │              │ 6 · Multi-cloud      │
+│     staging      │ (dispatch)   │  validation (Feint)  │
+└──────────────────┘              └──────────────────────┘
 ```
 
 Jobs 1–3 are deterministic, fast checks and run in parallel for fail-fast
-feedback; the integration job only starts once all three pass. The promote
-job appears as "skipped" unless the run was dispatched with
+feedback; the integration and multi-cloud jobs only start once all three pass.
+The promote job appears as "skipped" unless the run was dispatched with
 `deploy_staging`.
+
+The multi-cloud job validates the Scaleway DR environment against the Feint
+emulator (job 6), exercising a second cloud provider through the same IaC
+gates (`fmt-check`, `validate`, `plan`, apply, destroy) in the single workflow.
 
 The plan validates the full provider interaction against the emulator; the apply stage deploys the stack so the integration tests can exercise real endpoints (`scripts/integration-tests.sh`). The final destroy only cleans the ephemeral runner environment — its failure never masks a pipeline failure.
 

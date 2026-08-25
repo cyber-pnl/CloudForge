@@ -179,3 +179,61 @@ jobs:
           tofu -chdir=infrastructure/environments/staging init -input=false
           tofu -chdir=infrastructure/environments/staging apply -auto-approve -input=false
           TOFU_DIR=infrastructure/environments/staging ./scripts/integration-tests.sh
+
+  multicloud:
+    name: "6 · Multi-cloud validation (Scaleway / Feint)"
+    needs: [validate, unit-tests, security]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up OpenTofu
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: 1.12.6
+
+      - name: Start Feint emulator
+        run: |
+          docker compose up -d feint
+          for attempt in $(seq 1 30); do
+            if curl -sf http://localhost:4599/_feint/health > /dev/null 2>&1; then
+              echo "Feint is up"
+              break
+            fi
+            if [ "$attempt" = "30" ]; then
+              echo "Feint did not become reachable"
+              docker compose logs feint
+              exit 1
+            fi
+            sleep 2
+          done
+
+      - name: OpenTofu formatting (Scaleway)
+        run: tofu -chdir=infrastructure/environments/scw-dr fmt -check -recursive
+
+      - name: OpenTofu validation (Scaleway)
+        run: |
+          tofu -chdir=infrastructure/environments/scw-dr init -input=false
+          tofu -chdir=infrastructure/environments/scw-dr validate
+
+      - name: OpenTofu plan against Feint
+        run: tofu -chdir=infrastructure/environments/scw-dr plan -input=false
+
+      - name: Apply Scaleway DR stack
+        run: tofu -chdir=infrastructure/environments/scw-dr apply -auto-approve -input=false
+
+      - name: Verify Feint health
+        run: |
+          curl -sf http://localhost:4599/_feint/health | python3 -c "
+          import json, sys
+          h = json.load(sys.stdin)
+          assert h.get('instance', {}).get('pid'), 'Feint health check failed'
+          print('Feint health OK: pid', h['instance']['pid'])
+          "
+
+      - name: Destroy Scaleway DR stack
+        if: always()
+        continue-on-error: true
+        run: tofu -chdir=infrastructure/environments/scw-dr destroy -auto-approve -input=false

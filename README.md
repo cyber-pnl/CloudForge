@@ -11,10 +11,11 @@ The entire infrastructure is provisioned with **OpenTofu** against **Floci** (a 
 ## Key Features
 
 * **Local AWS simulation** — Floci provides AWS-compatible APIs on `localhost:4566`
+* **Multi-cloud (Scaleway)** — Feint emulates Scaleway on `localhost:4599`, with a warm-standby DR site provisioned by the real provider
 * **Infrastructure as Code** — declarative, reusable OpenTofu modules per AWS service
 * **Event-driven architecture** — API Gateway → Lambda → DynamoDB → Streams → EventBridge → SQS/SNS → S3
 * **Web console** — browser UI for the domain served by nginx with a same-origin API proxy
-* **CI pipeline** — one GitHub Actions workflow covering lint, tests, IaC validation and integration tests
+* **CI pipeline** — one GitHub Actions workflow covering lint, tests, IaC validation, integration tests and multi-cloud validation
 * **DevSecOps** — Trivy scans for vulnerabilities, misconfigurations and secrets at every change
 * **Reliability engineering** — controlled failure scenarios, DLQs, alarms and incident documentation
 
@@ -88,7 +89,7 @@ The application logic lives in `lambdas/` (handlers plus shared `common/` module
                 └──────────────┘
 ```
 
-All services run locally through Floci. See [docs/01-architecture/](docs/01-architecture/) for details.
+All services run locally through Floci and Feint. See [docs/01-architecture/](docs/01-architecture/) for details.
 
 ---
 
@@ -96,7 +97,7 @@ All services run locally through Floci. See [docs/01-architecture/](docs/01-arch
 
 | Category      | Tools                                                              |
 | ------------- | ------------------------------------------------------------------ |
-| Infrastructure| [Floci](https://github.com/floci-io/floci), [OpenTofu](https://opentofu.org/), Docker Compose |
+| Infrastructure| [Floci](https://github.com/floci-io/floci), [Feint](https://github.com/stephrobert/feint), [OpenTofu](https://opentofu.org/), Docker Compose |
 | Application   | Python, boto3, Lambda, REST API                                    |
 | DevOps        | Git, GitHub Actions                                                |
 | Security      | Trivy (filesystem, IaC, secrets, dependencies)                     |
@@ -129,7 +130,7 @@ pip install -r requirements-dev.txt
 ### Launch
 
 ```bash
-# 1. Start the local AWS environment
+# 1. Start the local environment (Floci + Feint)
 docker compose up -d
 
 # 2. Initialize and validate OpenTofu
@@ -154,7 +155,8 @@ Cleanup:
 
 ```bash
 aws s3 rm s3://cloudforge-dev-artifacts --recursive   # the emulator refuses to delete non-empty buckets
-tofu destroy
+tofu -chdir=infrastructure/environments/dev destroy    # primary (AWS/Floci)
+tofu -chdir=infrastructure/environments/scw-dr destroy # secondary (Scaleway/Feint)
 docker compose down
 ```
 
@@ -170,7 +172,7 @@ cloudforge/
 ├── lambdas/                   # Lambda handlers (users, projects, worker)
 ├── infrastructure/
 │   ├── modules/               # Reusable OpenTofu modules per AWS service
-│   └── environments/          # dev / staging / prod configurations
+│   └── environments/          # dev / staging / prod / scw-dr
 ├── tests/                       # unit / integration / e2e
 ├── webapp/                      # browser console (vanilla JS + nginx proxy)
 ├── docker/                      # Container assets
@@ -191,7 +193,7 @@ cloudforge/
 | [AWS services](docs/01-architecture/aws-services.md) | Services used and their purpose |
 | [ADRs](docs/01-architecture/decisions/README.md) | Architecture decision records |
 | [OpenTofu](docs/02-infrastructure/opentofu.md) | Modules, environments, workflow |
-| [Local environment](docs/02-infrastructure/local-environment.md) | Floci usage |
+| [Local environment](docs/02-infrastructure/local-environment.md) | Floci + Feint usage |
 | [Getting started](docs/04-devops/getting-started.md) | Full setup guide |
 | [CI pipeline](docs/04-devops/ci.md) | Pipeline stages and principles |
 | [Security principles](docs/05-security/principles.md) | DevSecOps practices |
