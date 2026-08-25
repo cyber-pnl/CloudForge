@@ -4,9 +4,11 @@ Floci provides the local AWS environment: AWS-compatible APIs without a real AWS
 
 ## Endpoint
 
-```text
-http://localhost:4566
-```
+| Service | Endpoint |
+|---------|----------|
+| Floci (AWS) | `http://localhost:4566` |
+| Feint (Scaleway) | `http://localhost:4599` |
+| Unified proxy | `http://localhost:4600` |
 
 ## Usage
 
@@ -204,7 +206,7 @@ Feint :4599
    state back. This is harmless (idempotent in-place update) and does not
    affect the destroy path.
 
-### Multi-account isolation (verified in Phase 9)
+### Multi-account isolation (verified in Phase 9) — Floci-specific
 
 The access key selects the account (`000000000001` gets its own resources), but only for **control-plane** APIs. The REST API execute plane resolves APIs exclusively in the default account, so an API deployed under another account cannot be invoked over HTTP. Environments therefore share the default account and rely on name prefixes (see ADR-004). `scripts/purge_floci_account.py` removes prefixed resources from a non-default account.
 

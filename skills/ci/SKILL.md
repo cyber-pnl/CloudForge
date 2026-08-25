@@ -29,6 +29,8 @@ Trivy
     ↓
 Floci
     ↓
+Feint → Scaleway DR validation
+    ↓
 OpenTofu plan
     ↓
 Integration tests

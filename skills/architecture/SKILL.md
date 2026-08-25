@@ -2,7 +2,7 @@
 
 ## When to use
 
-Use this skill when adding or changing AWS services, modifying the event-driven flow, or making a decision that affects the platform design.
+Use this skill when adding or changing AWS or Scaleway services, modifying the event-driven flow, or making a decision that affects the platform design.
 
 ## Procedure
 
@@ -20,9 +20,17 @@ Use this skill when adding or changing AWS services, modifying the event-driven 
    What are its security implications?
    ```
 
-4. If the change is a significant architectural decision, create an ADR in `docs/01-architecture/decisions/` following `ADR-XXX-short-description.md` with sections: Status, Context, Decision, Consequences, Alternatives Considered.
-5. Update `docs/01-architecture/aws-services.md` when a service is added.
-6. Validate with the OpenTofu skill if infrastructure is touched.
+4. For every new Scaleway service, answer (see `rules/01-architecture.md`):
+
+   ```text
+   Why is this service required on Scaleway?
+   Is it supported by Feint?
+   How will it be tested against Feint?
+   ```
+
+5. If the change is a significant architectural decision, create an ADR in `docs/01-architecture/decisions/` following `ADR-XXX-short-description.md` with sections: Status, Context, Decision, Consequences, Alternatives Considered.
+6. Update `docs/01-architecture/aws-services.md` when a service is added. Update the Scaleway table when adding Scaleway services.
+7. Validate with the OpenTofu skill if infrastructure is touched.
 
 ## References
 

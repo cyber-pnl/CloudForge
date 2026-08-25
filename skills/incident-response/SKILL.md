@@ -29,7 +29,7 @@ CloudForge includes controlled failure scenarios (e.g. Worker Lambda failure →
 
 ## Procedure
 
-1. Reproduce the scenario against the local Floci environment.
+1. Reproduce the scenario against the local Floci or Feint environment depending on the scenario.
 2. Capture the detection path (alarm, metric, log).
 3. Document the incident following the lifecycle above in `docs/07-reliability/`.
 4. If the incident reveals an architectural weakness, create or update an ADR (see `rules/01-architecture.md`).
