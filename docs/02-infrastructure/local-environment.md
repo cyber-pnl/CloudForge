@@ -125,6 +125,34 @@ Floci does not persist or read back some attributes that the provider writes. Ev
 * The provider block must route `cloudwatch` to Floci via `endpoints {}` like every other service — otherwise calls hit real AWS and fail with `InvalidClientTokenId`.
 * `TagResource` on an alarm returns HTTP 200 with an empty body; AWS SDK Go clients fail deserializing the response even though the operation succeeds server-side (verified in Phase 9).
 
+## Unified Cloud Proxy
+
+A lightweight nginx proxy sits in front of both Floci and Feint and provides
+a **single entry point** on `http://localhost:4600`:
+
+| Mode | Behavior |
+|------|----------|
+| `X-Region: aws` | All requests → Floci (AWS) |
+| `X-Region: scaleway` | All requests → Feint (Scaleway) |
+| No header | Random 50/50 split between the two backends |
+
+The split is deterministic per request (`split_clients` hashing `$request_id`)
+so the same request always lands on the same backend within a burst, but the
+overall distribution converges to 50/50.
+
+```bash
+# Explicit routing
+curl -H "X-Region: aws" http://localhost:4600/_localstack/health
+curl -H "X-Region: scaleway" http://localhost:4600/_feint/health
+
+# Random routing
+curl http://localhost:4600/_localstack/health
+```
+
+OpenTofu providers point directly to their respective backends (`:4566` /
+`:4599`) for deterministic IaC operations. The proxy is for ad-hoc testing,
+demonstrations and external consumers that need one URL for both clouds.
+
 ## Feint (Scaleway emulator)
 
 [Feint](https://github.com/stephrobert/feint) provides the local Scaleway

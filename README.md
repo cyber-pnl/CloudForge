@@ -12,6 +12,7 @@ The entire infrastructure is provisioned with **OpenTofu** against **Floci** (a 
 
 * **Local AWS simulation** — Floci provides AWS-compatible APIs on `localhost:4566`
 * **Multi-cloud (Scaleway)** — Feint emulates Scaleway on `localhost:4599`, with a warm-standby DR site provisioned by the real provider
+* **Unified cloud endpoint** — single proxy on `localhost:4600` routing to either cloud by `X-Region` header or random split
 * **Infrastructure as Code** — declarative, reusable OpenTofu modules per AWS service
 * **Event-driven architecture** — API Gateway → Lambda → DynamoDB → Streams → EventBridge → SQS/SNS → S3
 * **Web console** — browser UI for the domain served by nginx with a same-origin API proxy
@@ -98,6 +99,7 @@ All services run locally through Floci and Feint. See [docs/01-architecture/](do
 | Category      | Tools                                                              |
 | ------------- | ------------------------------------------------------------------ |
 | Infrastructure| [Floci](https://github.com/floci-io/floci), [Feint](https://github.com/stephrobert/feint), [OpenTofu](https://opentofu.org/), Docker Compose |
+| Proxy | nginx (unified cloud endpoint on `:4600`) |
 | Application   | Python, boto3, Lambda, REST API                                    |
 | DevOps        | Git, GitHub Actions                                                |
 | Security      | Trivy (filesystem, IaC, secrets, dependencies)                     |
@@ -172,7 +174,8 @@ cloudforge/
 ├── lambdas/                   # Lambda handlers (users, projects, worker)
 ├── infrastructure/
 │   ├── modules/               # Reusable OpenTofu modules per AWS service
-│   └── environments/          # dev / staging / prod / scw-dr
+│   ├── environments/          # dev / staging / prod / scw-dr
+│   └── proxy/                 # Unified cloud endpoint (nginx)
 ├── tests/                       # unit / integration / e2e
 ├── webapp/                      # browser console (vanilla JS + nginx proxy)
 ├── docker/                      # Container assets
