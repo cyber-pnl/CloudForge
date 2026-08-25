@@ -80,9 +80,49 @@ Backlog items are tracked here (see `rules/00-project.md`). Each task should hav
 
 ## Phase 10 — Multi-Cloud (Scaleway via Feint)
 
-* [ ] Feint emulator probes (capabilities, routes, provider apply)
-* [ ] Multi-cloud topology decision (ADR-005)
-* [ ] Feint service in the local environment
-* [ ] Scaleway warm-standby stack provisioned with OpenTofu
-* [ ] Multi-cloud CI validation (single workflow constraint kept)
-* [ ] Documentation (emulator quirks, DR extension)
+* [x] Feint emulator probes (capabilities, routes, provider apply)
+* [x] Multi-cloud topology decision (ADR-005)
+* [x] Feint service in the local environment
+* [x] Scaleway warm-standby stack provisioned with OpenTofu
+* [x] Multi-cloud CI validation (single workflow constraint kept)
+* [x] Documentation (emulator quirks, DR extension)
+* [x] Unified cloud proxy (nginx on :4600, X-Region header or random split)
+
+## Phase 11 — DR Workload Containerization
+
+> If Floci goes down, the Scaleway DR site must be able to run the actual
+> application — not just provision empty infrastructure. This phase bridges
+> the gap between "IaaS primitives available in Feint" and "managed services
+> used by CloudForge on AWS".
+
+### Service mapping (AWS managed → Scaleway IaaS)
+
+| AWS Service | Scaleway equivalent | Implementation |
+|---|---|---|
+| API Gateway | nginx reverse proxy | Container on instance |
+| Lambda (3 functions) | Docker containers | Python images on instance |
+| DynamoDB | PostgreSQL container | Data on block volume |
+| DynamoDB Streams | Redis pub/sub | Container on instance |
+| S3 | Block volume filesystem | Mount at /data |
+| SQS | Redis lists | Container on instance |
+| SNS | Redis pub/sub | Container on instance |
+| EventBridge | Cron worker | Container on instance |
+| CloudWatch | journald + local logs | Instance filesystem |
+| KMS / Secrets Manager | Vault container | Container on instance |
+| SSM Parameter Store | Config files | On block volume |
+
+* [ ] Dockerfiles for Lambda functions (users, projects, worker)
+* [ ] Docker Compose DR stack (nginx + app + PostgreSQL + Redis + Vault)
+* [ ] Block volume mount and data persistence layout
+* [ ] DR environment OpenTofu config (instance user_data with docker-compose)
+* [ ] nginx configuration for API Gateway replacement
+
+## Phase 12 — DR Validation and Failover
+
+> Prove that the DR site actually works end-to-end when Floci is down.
+
+* [ ] Data migration script (DynamoDB → PostgreSQL)
+* [ ] E2E test suite against Scaleway DR stack
+* [ ] DR failover runbook (step-by-step procedure)
+* [ ] DR drill in CI (optional: start Floci down, run against Scaleway)
+* [ ] Documentation (DR architecture, service mapping, failover procedure)

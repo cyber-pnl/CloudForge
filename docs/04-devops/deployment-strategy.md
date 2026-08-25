@@ -16,10 +16,11 @@ back out of a bad deployment. The topology is defined in
 The AWS environments all wrap the same platform module, so behavior
 differences come from inputs only — never from drifted code.
 
-The Scaleway environment models a warm-standby / burst-compute site on a
-second cloud provider (ADR-005). It provisions VPC, private network, a
-standby instance and a block volume through the real `scaleway/scaleway`
-provider against the Feint emulator.
+The Scaleway environment models a warm-standby DR site on a second cloud
+provider (ADR-005). It provisions VPC, private network, a standby instance
+and a block volume through the real `scaleway/scaleway` provider against the
+Feint emulator. When Floci goes down, the application runs as Docker
+containers on the Scaleway instance (Phases 11-12).
 
 ## Deployment flow
 
@@ -64,8 +65,12 @@ code), which is the same mechanism: old code, fresh apply.
 
 ## Disaster recovery scenario
 
-Scenario: the environment is corrupted or lost (bad apply, emulator state loss,
-host reboot with storage wipe).
+Two recovery paths exist depending on what failed:
+
+### Path A — Floci corrupted (primary rebuild)
+
+Scenario: the Floci emulator state is corrupted or lost (bad apply, emulator
+state loss, host reboot with storage wipe).
 
 Procedure (runbook RB-03):
 
@@ -80,13 +85,32 @@ same path unattended). Expected data loss: everything created after the last
 apply — accepted for the lab, documented here because the same decision must be
 explicit in production.
 
+### Path B — Floci lost (failover to Scaleway)
+
+Scenario: the primary cloud is unavailable or corrupted beyond rebuild.
+The application fails over to the Scaleway DR site running as Docker
+containers on the standby instance.
+
+Procedure (runbook RB-04, Phases 11-12):
+
+1. Provision Scaleway infrastructure: `tofu -chdir=infrastructure/environments/scw-dr apply`
+2. Sync data: DynamoDB → PostgreSQL migration script
+3. Deploy containers: `docker compose -f docker-compose.dr.yml up -d`
+4. Update DNS / API endpoint to Scaleway instance public IP
+5. Verify: `curl -H "Authorization: Bearer local-dev-token" https://<instance-ip>/users`
+
+Expected recovery time: 15-30 minutes (infrastructure + data sync + deploy).
+Data loss: delta between last DynamoDB backup and failover moment.
+
 ## Known constraints
 
 * Floci multi-account isolation is control-plane only; environments therefore
   share the default account and rely on name prefixes.
-* Feint is control-plane only; Scaleway instances never boot. The DR site
-  proves reproducible provisioning, not workload execution on Scaleway.
-* Feint does not emulate Object Storage; artifacts stay on S3/Floci.
+* Feint is control-plane only in its default mode; Scaleway instances do not
+  boot natively. The DR site runs Docker containers via `user_data` scripts
+  to work around this limitation (Phases 11-12).
+* Feint does not emulate Object Storage; artifacts are replicated to the
+  block volume filesystem instead of S3.
 * Volume attachment drift: Feint does not persist attachment state; every plan
   re-applies `additional_volume_ids` (idempotent, harmless).
 * Stream event source mappings are recreated fresh on cold rebuilds, so no
