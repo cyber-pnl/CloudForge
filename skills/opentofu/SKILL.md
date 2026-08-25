@@ -46,7 +46,11 @@ Do not blindly apply a plan.
 
 ## Floci note
 
-Plans and applies run against the local Floci endpoint (`http://localhost:4566`). See the Floci skill for environment setup and emulator-specific behavior.
+Plans and applies for AWS environments run against the local Floci endpoint (`http://localhost:4566`). See the Floci skill for environment setup and emulator-specific behavior.
+
+## Feint note
+
+Plans and applies for the Scaleway DR environment (`infrastructure/environments/scw-dr/`) run against the Feint endpoint (`http://localhost:4599`). The `scaleway/scaleway` provider uses an `api_url` override to point to Feint instead of the real Scaleway API. Credentials are Feint's documented public placeholders and are never validated. See the Feint skill for details.
 
 ## References
 

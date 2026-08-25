@@ -51,6 +51,10 @@ specific resource + specific action + specific principal
 
 Avoid `"Action": "*"` / `"Resource": "*"` unless explicitly justified and documented.
 
+## Emulator credentials
+
+Feint accepts any signing credentials (`SCWXXXXXXXXXXXXXXXXX` / `11111111-1111-1111-1111-111111111111`). Never use real Scaleway credentials in the local environment. Trivy scans apply to Scaleway provider configuration.
+
 ## References
 
 * Rules: `rules/03-security.md`
