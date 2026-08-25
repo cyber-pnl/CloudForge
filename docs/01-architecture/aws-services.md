@@ -1,6 +1,8 @@
-# AWS Services
+# Cloud Services
 
-CloudForge intentionally uses several AWS services to demonstrate different cloud patterns.
+CloudForge intentionally uses services from two clouds to demonstrate different cloud patterns: **AWS** (serverless primary) and **Scaleway** (IaaS warm-standby).
+
+## AWS Services (Primary — Floci)
 
 | Service             | Purpose                      |
 | ------------------- | ---------------------------- |
@@ -18,12 +20,33 @@ CloudForge intentionally uses several AWS services to demonstrate different clou
 | Secrets Manager     | Application secrets          |
 | SSM Parameter Store | Configuration                |
 
+## Scaleway Services (DR Site — Feint)
+
+| Service         | Purpose                                    |
+| --------------- | ------------------------------------------ |
+| VPC             | Isolated network overlay                   |
+| VPC Gateway     | Network routing                            |
+| Instance        | Standby compute (DEV1-S, control-plane)    |
+| Block Storage   | Persistent restore volume (10 GB)          |
+| IAM             | Access control                             |
+| IPAM            | IP address management                      |
+| Load Balancer   | Traffic distribution (emulated, not used)  |
+
+The Scaleway environment (`infrastructure/environments/scw-dr/`) models a warm-standby disaster-recovery site: if the primary AWS cloud is lost, workloads can be re-hosted on Scaleway infrastructure provisioned by the real `scaleway/scaleway` provider against the Feint emulator.
+
 ## Local execution
 
-The infrastructure is executed locally through **Floci**, which provides AWS-compatible APIs on `localhost:4566`.
+Both clouds run locally through their respective emulators:
+
+| Emulator | Port | Cloud |
+| -------- | ---- | ----- |
+| Floci    | :4566 | AWS  |
+| Feint    | :4599 | Scaleway |
+
+A unified nginx proxy on `:4600` routes requests to either backend (see [Unified Cloud Proxy](../02-infrastructure/local-environment.md#unified-cloud-proxy)).
 
 See [Local Environment](../02-infrastructure/local-environment.md) for usage details and emulator-specific behavior.
 
 ## Adding a service
 
-Before adding a new AWS service, follow the justification checklist in `rules/01-architecture.md` and the procedure in `skills/architecture/SKILL.md`. Update this table when a service is added.
+Before adding a new cloud service, follow the justification checklist in `rules/01-architecture.md` and the procedure in `skills/architecture/SKILL.md`. Update the appropriate table when a service is added.

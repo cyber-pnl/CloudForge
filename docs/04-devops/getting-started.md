@@ -29,16 +29,26 @@ git clone https://github.com/<your-user>/cloudforge.git
 cd cloudforge
 ```
 
-## 2. Start Floci
+## 2. Start the local environment
 
 ```bash
 docker compose up -d
 ```
 
-Verify that Floci is running:
+This starts all services: Floci (AWS), Feint (Scaleway), the unified proxy,
+the observability stack and the web console.
+
+Verify that both emulators are running:
 
 ```bash
-aws --endpoint-url=http://localhost:4566 s3 ls
+curl -sf http://localhost:4566/_localstack/health | python3 -m json.tool | head -3   # Floci
+curl -sf http://localhost:4599/_feint/health      | python3 -m json.tool | head -3   # Feint
+```
+
+Test the unified proxy (random routing):
+
+```bash
+curl -sf http://localhost:4600/_localstack/health | head -c 80
 ```
 
 ## 3. Initialize OpenTofu
@@ -118,6 +128,7 @@ docker compose up -d
 
 | Service | URL | Purpose |
 | ------- | --- | ------- |
+| Unified proxy | http://localhost:4600 | Routes to Floci or Feint (by `X-Region` header or random) |
 | Exporter | http://localhost:9877/metrics | Prometheus-format metrics polled from Floci |
 | Prometheus | http://localhost:9090 | Scrapes the exporter, evaluates alert rules |
 | Grafana | http://localhost:3000 | Provisioned "CloudForge Overview" dashboard (anonymous viewer, admin/admin for editing) |
@@ -132,12 +143,14 @@ Terraform document the same intent but are not evaluated by the emulator (see
 Destroy the local infrastructure:
 
 ```bash
-tofu destroy
-```
+# Primary (AWS)
+aws s3 rm s3://cloudforge-dev-artifacts --recursive
+tofu -chdir=infrastructure/environments/dev destroy
 
-Stop Floci:
+# Secondary (Scaleway DR)
+tofu -chdir=infrastructure/environments/scw-dr destroy
 
-```bash
+# Stop all services
 docker compose down
 ```
 

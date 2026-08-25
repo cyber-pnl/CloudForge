@@ -24,9 +24,9 @@ provider against the Feint emulator.
 ## Deployment flow
 
 ```text
-commit → ci pipeline (dev)
+commit → ci pipeline (dev + scw-dr)
              │ pytest, fmt, validate, trivy gates
-             │ plan → apply → 17 e2e checks
+             │ plan → apply → e2e checks
              ▼
         green build ──(manual dispatch: deploy_staging)──► staging
                                                               │ apply + e2e checks
@@ -37,6 +37,7 @@ commit → ci pipeline (dev)
 * Dev is destroyed and rebuilt every run — the pipeline itself is the DR drill.
 * Staging promotion reuses the exact packages validated in dev.
 * Prod is never touched by automation; applying it is a deliberate operator act.
+* The Scaleway DR site is validated on every run alongside dev (CI job 6).
 
 ## Rollback strategy
 
@@ -83,5 +84,10 @@ explicit in production.
 
 * Floci multi-account isolation is control-plane only; environments therefore
   share the default account and rely on name prefixes.
+* Feint is control-plane only; Scaleway instances never boot. The DR site
+  proves reproducible provisioning, not workload execution on Scaleway.
+* Feint does not emulate Object Storage; artifacts stay on S3/Floci.
+* Volume attachment drift: Feint does not persist attachment state; every plan
+  re-applies `additional_volume_ids` (idempotent, harmless).
 * Stream event source mappings are recreated fresh on cold rebuilds, so no
   stream history replays into a new environment.

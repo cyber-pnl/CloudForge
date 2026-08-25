@@ -9,19 +9,26 @@ The infrastructure is divided into reusable modules.
 ```text
 infrastructure/
 │
-├── modules/
+├── modules/                  # Reusable OpenTofu modules (AWS)
 │   ├── api-gateway/
+│   ├── cloudwatch/
 │   ├── dynamodb/
 │   ├── eventbridge/
 │   ├── iam/
 │   ├── kms/
 │   ├── lambda/
+│   ├── platform/
 │   ├── s3/
 │   ├── sns/
 │   └── sqs/
 │
-└── environments/
-    └── dev/
+├── environments/
+│   ├── dev/                  # Ephemeral AWS dev
+│   ├── staging/              # Long-lived AWS staging
+│   ├── prod/                 # Long-lived AWS production
+│   └── scw-dr/               # Scaleway DR site (Feint)
+│
+└── proxy/                    # Unified cloud endpoint (nginx)
 ```
 
 Additional modules are added in later phases following the same pattern.
@@ -30,12 +37,14 @@ Additional modules are added in later phases following the same pattern.
 
 | Module       | Resources | Purpose |
 | ------------ | --------- | ------- |
+| `platform`   | all resources via sub-modules | Complete platform stack consumed by dev/staging/prod wrappers |
 | `s3`         | bucket, versioning, public access block, SSE configuration | Object storage with secure defaults; optional customer managed KMS encryption via `kms_master_key_arn`. |
 | `kms`        | key with rotation, alias | Customer managed encryption keys consumed by other modules. |
 | `dynamodb`   | table (PAY_PER_REQUEST), point-in-time recovery | Application data tables. |
 | `iam`        | Lambda execution role with scoped inline policy | Least-privilege roles; extra statements are passed per function and restricted to the resources it owns. |
 | `lambda`     | function, CloudWatch log group with retention | Deployment packages are zipped from source directories via the `archive` provider. |
 | `api-gateway`| REST API, nested resources (`/{id}` and sub-resources), AWS_PROXY integrations, deployment, stage | Routes are declared as maps per depth level; every route is backed by a Lambda proxy integration. |
+| `cloudwatch` | metric alarms | Operational alarms; documented but not evaluated by Floci (see local-environment.md). |
 | `sqs`        | queue | Asynchronous processing; optional CMK encryption. |
 | `sns`        | topic | Notifications fan-out; optional CMK encryption. |
 | `eventbridge`| custom bus, rules with single target each | Domain events routing; patterns are passed as JSON strings. |
@@ -53,9 +62,10 @@ The AWS provider is pinned to `~> 5.0` for Floci compatibility — see [Local En
                 │    Modules    │
                 └───────┬───────┘
                         │
-         ┌──────────────┼──────────────┐
-         ▼              ▼              ▼
-       DEV           STAGING          PROD
+         ┌──────────────┼──────────────┬──────────────┐
+         ▼              ▼              ▼              ▼
+       DEV          STAGING         PROD         SCW-DR
+    (Floci)        (Floci)        (Floci)        (Feint)
 ```
 
 ## Standard workflow
@@ -99,6 +109,16 @@ GitHub → CI → Floci → OpenTofu
 ### Production
 
 Represents the desired production architecture. The project is initially executed entirely locally; the infrastructure is intentionally structured so that a future migration to real AWS can be explored without redesigning the entire architecture.
+
+### Scaleway DR
+
+Warm-standby disaster-recovery site on Scaleway (ADR-005). Provisions VPC, private network, standby instance and block volume through the real `scaleway/scaleway` provider against the Feint emulator.
+
+```text
+CI → Feint → OpenTofu (scaleway/scaleway provider)
+```
+
+See [deployment-strategy.md](../04-devops/deployment-strategy.md) for the full topology.
 
 ## Adding a module
 

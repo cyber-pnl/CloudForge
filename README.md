@@ -51,46 +51,71 @@ The application logic lives in `lambdas/` (handlers plus shared `common/` module
 ## Architecture
 
 ```text
-                              ┌──────────────────┐
-                              │    Developer     │
-                              └────────┬─────────┘
-                                       │
-                                       ▼
-                              ┌──────────────────┐
-                              │   API Gateway    │
-                              └────────┬─────────┘
-                                       │
-                         ┌─────────────┴─────────────┐
-                         ▼                           ▼
-                 ┌───────────────┐         ┌────────────────┐
-                 │ Lambda Users  │         │Lambda Projects │
-                 └──────┬────────┘         └───────┬────────┘
-                        └───────────┬──────────────┘
-                                    ▼
-                             ┌──────────────┐
-                             │   DynamoDB   │
-                             └──────┬───────┘
-                                 Stream
-                                    ▼
-                             ┌──────────────┐
-                             │  EventBridge │
-                             └──────┬───────┘
-                        ┌───────────┴───────────┐
-                        ▼                       ▼
-                ┌──────────────┐       ┌───────────────┐
-                │ SQS + DLQ    │       │ SNS           │
-                └──────┬───────┘       │ Notifications │
-                       ▼               └───────────────┘
-                ┌──────────────┐
-                │ Worker Lambda│
-                └──────┬───────┘
-                       ▼
-                ┌──────────────┐
-                │      S3      │
-                └──────────────┘
+                                ┌──────────────────┐
+                                │    Developer     │
+                                └────────┬─────────┘
+                                         │
+                              ┌──────────┴──────────┐
+                              ▼                      ▼
+                     ┌────────────────┐    ┌────────────────┐
+                     │  Unified Proxy │    │  Web Console   │
+                     │   :4600        │    │   :8080        │
+                     └───────┬────────┘    └───────┬────────┘
+                             │                     │
+              ┌──────────────┼──────────────────────┘
+              │              │
+              ▼              ▼
+     ┌────────────────┐ ┌────────────────┐
+     │   Floci :4566  │ │  Feint :4599   │
+     │   (AWS)        │ │  (Scaleway)    │
+     └───────┬────────┘ └───────┬────────┘
+             │                  │
+             ▼                  ▼
+     ┌────────────────┐ ┌────────────────┐
+     │  AWS Provider  │ │ SCW Provider   │
+     │  ~> 5.0        │ │ ~> 2.81        │
+     └───────┬────────┘ └───────┬────────┘
+             │                  │
+             ▼                  ▼
+     ┌────────────────┐ ┌────────────────┐
+     │  API Gateway   │ │ VPC + Instance │
+     │  Lambda        │ │ Block Storage  │
+     │  DynamoDB      │ │ IAM            │
+     │  S3            │ │                │
+     │  SQS / SNS     │ │                │
+     │  EventBridge   │ │                │
+     │  CloudWatch    │ │                │
+     └───────┬────────┘ └────────────────┘
+             │
+             ▼
+     ┌────────────────┐
+     │  Observability │
+     │  Prometheus    │
+     │  Grafana       │
+     └────────────────┘
 ```
 
-All services run locally through Floci and Feint. See [docs/01-architecture/](docs/01-architecture/) for details.
+**Primary cloud**: AWS (Floci) — serverless application platform.
+**Secondary cloud**: Scaleway (Feint) — warm-standby IaaS disaster-recovery site.
+**Unified proxy**: nginx routes to either cloud by `X-Region` header or random split.
+
+### Internal event-driven flow (AWS primary)
+
+```text
+API Gateway → Lambda Users / Lambda Projects
+                    │
+                    ▼
+               DynamoDB
+                 │ Stream
+                 ▼
+            EventBridge
+           ┌────┴────┐
+           ▼         ▼
+     SQS + DLQ      SNS
+           │
+           ▼
+     Worker Lambda → S3
+```
 
 ---
 
@@ -192,8 +217,8 @@ cloudforge/
 
 | Document | Content |
 | -------- | ------- |
-| [Architecture overview](docs/01-architecture/overview.md) | Goals and event-driven design |
-| [AWS services](docs/01-architecture/aws-services.md) | Services used and their purpose |
+| [Architecture overview](docs/01-architecture/overview.md) | Goals and multi-cloud design |
+| [Cloud services](docs/01-architecture/aws-services.md) | AWS + Scaleway services and their purpose |
 | [ADRs](docs/01-architecture/decisions/README.md) | Architecture decision records |
 | [OpenTofu](docs/02-infrastructure/opentofu.md) | Modules, environments, workflow |
 | [Local environment](docs/02-infrastructure/local-environment.md) | Floci + Feint usage |
