@@ -60,6 +60,18 @@ Run integration tests
 Verify expected AWS behavior
 ```
 
+For Scaleway DR work:
+
+```text
+Start Feint
+    ↓
+Provision scw-dr environment
+    ↓
+Run tofu validate / plan / apply
+    ↓
+Verify expected Scaleway behavior
+```
+
 If a test cannot be executed, explicitly report why.
 
 Never claim that a test passed when it was not executed.

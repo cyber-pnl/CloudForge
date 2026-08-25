@@ -98,3 +98,23 @@ What are its security implications?
 Avoid adding AWS services simply to increase the number of services in the project.
 
 Architectural complexity must have a reason.
+
+## Scaleway Architecture
+
+Every Scaleway service must have a clear purpose and be supported by the Feint emulator.
+
+Before adding a new Scaleway service, answer:
+
+```text
+Why is this service required on Scaleway (vs. AWS)?
+
+Is it supported by Feint?
+
+What responsibility does it have?
+
+How will it be tested against Feint?
+
+What are its security implications?
+```
+
+Scaleway services are limited to IaaS primitives available in Feint. Managed-service equivalents (e.g., managed databases) do not exist locally. Document any gap in `docs/02-infrastructure/local-environment.md`.

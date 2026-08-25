@@ -13,11 +13,21 @@ Do not introduce AWS resources directly through CLI commands as a replacement fo
 The desired workflow is:
 
 ```text
-OpenTofu
+OpenTofu (AWS)
     ↓
 Floci
     ↓
 AWS-compatible infrastructure
+```
+
+For Scaleway DR:
+
+```text
+OpenTofu (scaleway/scaleway provider)
+    ↓
+Feint
+    ↓
+Scaleway-compatible infrastructure
 ```
 
 Never:

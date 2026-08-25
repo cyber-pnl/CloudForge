@@ -62,6 +62,8 @@ If a finding is intentionally accepted:
 
 Secrets must never be committed.
 
+Feint accepts any signing credentials (`SCWXXXXXXXXXXXXXXXXX` / `11111111-1111-1111-1111-111111111111`). Never use real Scaleway credentials in local development — the emulator never validates them.
+
 Before committing, check for:
 
 ```text
