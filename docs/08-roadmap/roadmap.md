@@ -108,14 +108,14 @@ Backlog items are tracked here (see `rules/00-project.md`). Each task should hav
 | SNS | Redis pub/sub | Container on instance |
 | EventBridge | Cron worker | Container on instance |
 | CloudWatch | journald + local logs | Instance filesystem |
-| KMS / Secrets Manager | Vault container | Container on instance |
+| KMS / Secrets Manager | Vault container (deferred) | Container on instance |
 | SSM Parameter Store | Config files | On block volume |
 
-* [ ] Dockerfiles for Lambda functions (users, projects, worker)
-* [ ] Docker Compose DR stack (nginx + app + PostgreSQL + Redis + Vault)
-* [ ] Block volume mount and data persistence layout
+* [x] Dockerfile for DR application (shared, reuses Lambda handlers)
+* [x] Docker Compose DR stack (nginx + app + PostgreSQL + Redis)
+* [x] Block volume mount and data persistence layout
 * [ ] DR environment OpenTofu config (instance user_data with docker-compose)
-* [ ] nginx configuration for API Gateway replacement
+* [x] nginx configuration for API Gateway replacement
 
 ## Phase 12 — DR Validation and Failover
 

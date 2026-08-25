@@ -59,7 +59,8 @@ gone by design.
 1. `make test-integration` — end-to-end API, storage and event flow.
 2. `curl localhost:9877/metrics | grep api_up` — health probe reports 1.
 3. `curl -s localhost:9090/api/v1/alerts` — no unexpected firing alerts.
-4. `docker logs cloudforge-floci | tail` — no error storms.
+4. `curl -sf http://localhost:4599/_feint/health | python3 -c "import sys,json; h=json.load(sys.stdin); assert h.get('instance',{}).get('pid')"` — Feint health OK.
+5. `docker logs cloudforge-floci | tail` — no error storms.
 
 ## RB-05 — Replay a dead-letter message manually
 
@@ -78,3 +79,17 @@ boto3.client('sqs', region_name='us-east-1', endpoint_url='http://localhost:4566
    ```
 
 4. Watch the artifact appear and the queue drain to zero.
+
+## RB-06 — Scaleway DR failover
+
+**When:** primary AWS cloud is lost and workloads must run on Scaleway.
+
+1. Verify Floci is down: `curl -sf http://localhost:4566/_localstack/health` should fail.
+2. Ensure the DR stack is running: `docker compose -f docker-compose.dr.yml up -d`.
+3. Verify Feint health: `curl -sf http://localhost:4599/_feint/health`.
+4. Verify DR application health: `curl -sf http://localhost:8081/health`.
+5. Confirm the DR nginx is serving requests on `:8081`.
+6. Document the failover event in a new incident report (`INC-XXX`).
+
+**Recovery:** Once the primary cloud is restored, stop the DR stack and resume
+normal operations on Floci/AWS.

@@ -1,6 +1,6 @@
 # CloudForge
 
-> **Production-grade DevOps laboratory built on a local AWS environment with Floci, OpenTofu and Docker.**
+> **Production-grade DevOps laboratory built on a local AWS environment with Floci, Scaleway with Feint, OpenTofu and Docker.**
 
 CloudForge reproduces a realistic AWS production environment locally — no real AWS account required. It combines **Infrastructure as Code, CI/CD, security scanning, containerization, event-driven architecture and observability** to demonstrate the engineering workflow surrounding a production cloud platform.
 
@@ -138,7 +138,7 @@ API Gateway → Lambda Users / Lambda Projects
 
 | Tool | Version tested | Notes |
 | ---- | -------------- | ----- |
-| Docker + Compose v2 | 29.x | runs Floci, observability stack and the web console |
+| Docker + Compose v2 | 29.x | runs Floci, Feint, observability stack and the web console |
 | OpenTofu | 1.12.6 | pinned in CI; `opentofu` package or [opentofu.org](https://opentofu.org/docs/intro/install/) |
 | Python | 3.13+ (3.14 works) | unit tests only; Lambda runtime itself is the `python:3.13` image |
 | AWS CLI v2 | any | teardown (`aws s3 rm`) and ad-hoc debugging |
@@ -207,7 +207,9 @@ cloudforge/
 ├── rules/                     # Mandatory project constraints (agents)
 ├── skills/                    # Project-specific procedures (agents)
 ├── docs/                      # Project knowledge base
-├── docker-compose.yml         # Local Floci environment
+├── docker-compose.yml         # Local Floci + Feint environment
+├── docker-compose.dr.yml      # DR stack (Scaleway standby)
+├── dr/                        # DR containerized workload
 └── Makefile                   # Common developer commands
 ```
 

@@ -12,7 +12,7 @@ docs/
 │   └── decisions/            Architecture Decision Records (ADR)
 ├── 02-infrastructure/        Infrastructure as Code
 │   ├── opentofu.md           Modules, environments, workflow
-│   └── local-environment.md  Floci usage and emulator notes
+│   └── local-environment.md  Floci + Feint usage and emulator notes
 ├── 04-devops/
 │   ├── ci.md                 CI pipeline stages and principles
 │   ├── deployment-strategy.md Environments, promotion, rollback and DR
@@ -21,7 +21,9 @@ docs/
 │   └── principles.md         DevSecOps principles
 ├── 07-reliability/
 │   ├── failure-scenarios.md  Controlled failure scenarios
-│   └── observability.md      Logs, metrics, alarms
+│   ├── incidents/             Incident reports (INC-001, INC-002)
+│   ├── observability.md      Logs, metrics, alarms
+│   └── runbooks.md           Operational procedures
 └── 08-roadmap/
     └── roadmap.md            Phases and backlog
 ```
