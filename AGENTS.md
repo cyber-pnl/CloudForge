@@ -1,6 +1,6 @@
 # CloudForge — Agent Instructions
 
-CloudForge is a production-grade DevOps laboratory: AWS simulated locally with **Floci**, infrastructure managed with **OpenTofu**, changes validated through **GitHub Actions**, and **DevSecOps** practices enforced with **Trivy**.
+CloudForge is a production-grade DevOps laboratory: AWS simulated locally with **Floci**, Scaleway simulated with **Feint**, infrastructure managed with **OpenTofu**, changes validated through **GitHub Actions**, and **DevSecOps** practices enforced with **Trivy**.
 
 Agents are expected to behave like members of a professional engineering team. Do not optimize for producing code quickly — optimize for correctness, maintainability, security, testability, reproducibility, observability and architectural consistency.
 
@@ -28,7 +28,7 @@ docs/          Source of truth for project knowledge
 | File | Scope |
 | ---- | ----- |
 | `rules/00-project.md` | Mission, core principle, code quality, dependencies, backlog |
-| `rules/01-architecture.md` | Documentation updates, ADRs, AWS service justification |
+| `rules/01-architecture.md` | Documentation updates, ADRs, AWS/Scaleway service justification |
 | `rules/02-opentofu.md` | Declarative IaC, validation, destructive operations |
 | `rules/03-security.md` | Security baseline, Trivy policy, secrets |
 | `rules/04-testing.md` | Testing levels, validation before completion |
@@ -44,9 +44,10 @@ Read the relevant skill before performing specialized work:
 
 | Skill | Use for |
 | ----- | ------- |
-| `skills/architecture/SKILL.md` | Adding/changing AWS services, ADRs |
+| `skills/architecture/SKILL.md` | Adding/changing AWS or Scaleway services, ADRs |
 | `skills/opentofu/SKILL.md` | Any change under `infrastructure/` |
 | `skills/floci/SKILL.md` | Local AWS environment work |
+| `skills/feint/SKILL.md` | Local Scaleway environment work |
 | `skills/devsecops/SKILL.md` | Security scans, findings, secrets, IAM |
 | `skills/testing/SKILL.md` | Test strategy and pre-completion checks |
 | `skills/ci/SKILL.md` | Changes to `.github/workflows/ci.yml` |
@@ -61,6 +62,8 @@ Project knowledge lives under `docs/` (see `docs/README.md` for the index). Befo
 ## Quick Reference
 
 * Local AWS endpoint: `http://localhost:4566`
+* Local Scaleway endpoint: `http://localhost:4599`
+* Unified cloud proxy: `http://localhost:4600`
 * Infrastructure validation minimum: `tofu fmt -check && tofu validate && tofu plan`
 * Tests: `pytest`
 * Security gate: `trivy fs .`
