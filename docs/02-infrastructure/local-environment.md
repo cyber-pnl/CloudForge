@@ -257,6 +257,27 @@ discovered. The same rules as Floci apply:
 Floci-AZ mirrors Floci's account isolation model for Azure resource groups and
 subscriptions. Environments share the default account and rely on name prefixes.
 
+### Event Grid — Floci-AZ-specific
+
+Floci-AZ implements Event Grid in-process over the ARM path
+(`Microsoft.EventGrid`) with custom topics, access keys, and webhook event
+subscriptions. Publishing is HTTP-only (data plane at `/{topic}-eventgrid/api/events`)
+in Event Grid or CloudEvents 1.0 schemas; delivery is async with retry and the
+`SubscriptionValidationEvent` handshake.
+
+Verified limitations (do not rely on these working):
+
+1. **Webhook destinations only.** Storage Queue, Azure Function, Service Bus,
+   and Event Hub event subscription destinations are not supported.
+2. **No dead-lettering.** Events that exhaust `maxDeliveryAttempts` are dropped,
+   not written to a dead-letter blob container.
+3. **No Namespace surface.** Domains, partner/system topics, and the MQTT/pull
+   namespace are out of scope.
+4. **Advanced filters are accepted but not evaluated**; `CustomEventSchema` is
+   treated as the Event Grid schema.
+5. Authentication is permissive: the `aeg-sas-key` header is accepted but not
+   validated (dev mode).
+
 ### Provider version pinning
 
 The project pins `hashicorp/aws` to `~> 5.0`, matching the provider constraint of Floci's own OpenTofu compatibility suite. Provider 6.45+ regresses on API Gateway v1 (`GetRestApi`/`PutRestApi` response fields, upstream issues floci-io/floci#855 and #999): under 6.x the `aws_api_gateway_rest_api` waiter fails with `unexpected state ''`. Revisit when Floci ships fixes for these issues.

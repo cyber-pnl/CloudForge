@@ -74,3 +74,13 @@ output "apim_gateway_url" {
   description = "Gateway URL of the API Management instance."
   value       = module.apim.gateway_url
 }
+
+output "eventgrid_topic_name" {
+  description = "Name of the Event Grid custom topic."
+  value       = module.events.topic_name
+}
+
+output "eventgrid_topic_endpoint" {
+  description = "Endpoint to publish events to (data plane)."
+  value       = module.events.topic_endpoint
+}

@@ -25,7 +25,8 @@ infrastructure/
 │   ├── az-storage/           # Azure Storage (Blob + Queue)
 │   ├── az-keyvault/          # Azure Key Vault
 │   ├── az-functions/          # Azure Functions (Service Plan + Function App)
-│   └── az-apim/               # Azure API Management
+│   ├── az-apim/               # Azure API Management
+│   └── az-eventgrid/          # Azure Event Grid (custom topic + subscriptions)
 │
 ├── environments/
 │   ├── dev/                  # Ephemeral AWS dev
@@ -58,6 +59,7 @@ Additional modules are added in later phases following the same pattern.
 | `az-keyvault` | Key Vault, secrets | Application secrets and encryption keys; Azure equivalent of KMS. |
 | `az-functions` | Service plan, Linux Function App | Serverless compute; Azure equivalent of Lambda. |
 | `az-apim` | API Management instance, APIs | REST API gateway; Azure equivalent of API Gateway. |
+| `az-eventgrid` | Custom topic, event subscriptions | Event router; Azure equivalent of SNS/EventBridge. |
 
 Each environment consumes the same reusable modules with environment-specific configuration.
 
@@ -140,9 +142,14 @@ Phase 2 (compute and gateway) provisions:
 - **Azure Functions** service plans and Linux Function Apps (users, projects, worker, dispatcher)
 - **API Management** instance with Users and Projects APIs
 
+Phase 3 (messaging and events) provisions:
+- **Event Grid** custom topic with webhook event subscriptions
+
 ```text
 CI → Floci-AZ → OpenTofu (azurerm provider)
 ```
+
+> **Emulator note:** Floci-AZ Event Grid supports webhook destinations only. Storage Queue, Azure Function, and Service Bus event subscription destinations are not supported; domain/namespace surfaces are out of scope. See [local-environment.md](local-environment.md#event-grid) for details.
 
 The `azurerm` provider is configured with `environment = "stack"` and `metadata_host = "localhost:4577"` to discover the cloud via Floci-AZ's HTTPS metadata endpoint. TLS is required — see [local-environment.md](local-environment.md#tls-is-mandatory-for-the-azurerm-provider).
 

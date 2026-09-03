@@ -156,7 +156,7 @@ module "dispatcher_function" {
 
   app_settings = {
     TABLE_NAME     = module.cosmosdb.account_name
-    EVENT_BUS_NAME = "${var.name_prefix}-events"
+    EVENT_BUS_NAME = module.events.topic_name
   }
 
   tags = local.common_tags
@@ -181,6 +181,25 @@ module "apim" {
       display_name = "Projects API"
       protocols    = ["https"]
       description  = "CRUD operations for projects"
+    }
+  }
+
+  tags = local.common_tags
+}
+
+module "events" {
+  source = "../../modules/az-eventgrid"
+
+  topic_name          = "${var.name_prefix}-events"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  input_schema        = "CloudEventSchemaV1_0"
+
+  event_subscriptions = {
+    worker = {
+      endpoint             = "${module.worker_function.default_hostname}/api/worker"
+      included_event_types = ["cloudforge.job"]
+      subject_begins_with  = "cloudforge."
     }
   }
 
