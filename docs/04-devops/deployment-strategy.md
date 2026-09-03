@@ -27,7 +27,7 @@ containers on the Azure instance (Phases 11-12).
 ```mermaid
 flowchart TD
     Commit[commit]
-    CI["ci pipeline (dev + dev-az)"]
+    CI["ci pipeline (dev)"]
     GATES["pytest, fmt, validate, trivy gates"]
     ALSO["plan → apply → e2e checks"]
     GREEN[green build]
@@ -41,7 +41,7 @@ flowchart TD
 * Dev is destroyed and rebuilt every run — the pipeline itself is the DR drill.
 * Staging promotion reuses the exact packages validated in dev.
 * Prod is never touched by automation; applying it is a deliberate operator act.
-* The Azure DR site is validated on every run alongside dev (CI job 6).
+* The Azure DR environment is no longer validated in CI; multi-cloud routing and the Azure validation gate were removed from the pipeline (see `docs/02-infrastructure/multicloud-journal.md`).
 
 ## Rollback strategy
 

@@ -29,8 +29,6 @@ Trivy
     ↓
 Floci
     ↓
-    Floci-AZ → Azure validation
-    ↓
 OpenTofu plan
     ↓
 Integration tests
