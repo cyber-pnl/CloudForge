@@ -6,20 +6,15 @@ The project includes controlled failure scenarios to demonstrate operational mat
 
 ## Scenario 1 — poison job → retries → DLQ → alert
 
-```text
-Poison job (simulate_failure in the canonical envelope)
-     │
-     ▼
-Worker fails 3 deliveries (maxReceiveCount)
-     │
-     ▼
-SQS redrive moves it to the DLQ
-     │
-     ▼
-Exporter metric cloudforge_sqs_messages{kind="dlq"} increases
-     │
-     ▼
-Prometheus alert DeadLetterQueueNotEmpty fires
+```mermaid
+flowchart TD
+    P["Poison job<br/>(simulate_failure in the canonical envelope)"]
+    W["Worker fails 3 deliveries<br/>(maxReceiveCount)"]
+    D[SQS redrive moves it to the DLQ]
+    M["Exporter metric<br/>cloudforge_sqs_messages{kind=dlq} increases"]
+    A["Prometheus alert<br/>DeadLetterQueueNotEmpty fires"]
+
+    P --> W --> D --> M --> A
 ```
 
 Reproduce: `make inject-poison`. Full lifecycle documented in
@@ -27,14 +22,13 @@ Reproduce: `make inject-poison`. Full lifecycle documented in
 
 ## Scenario 2 — emulator outage → health probe → alert
 
-```text
-Emulator container stops
-     │
-     ▼
-cloudforge_api_up drops to 0 within one poll cycle
-     │
-     ▼
-Prometheus alert ApiDown pending, firing after 2m
+```mermaid
+flowchart TD
+    E[Emulator container stops]
+    H[cloudforge_api_up drops to 0<br/>within one poll cycle]
+    P[Prometheus alert ApiDown<br/>pending, firing after 2m]
+
+    E --> H --> P
 ```
 
 Reproduce: `make inject-outage` (stops the emulator for ~150 s and restarts it).
@@ -49,11 +43,12 @@ Full lifecycle documented in [INC-002](incidents/INC-002-emulator-outage.md).
 > gateway routes all traffic to Floci (AWS), so when Floci is down the
 > application is unreachable.
 
-```text
-Floci container stops (primary cloud lost)
-     │
-     ▼
-Application unreachable (all gateway traffic is AWS-only)
+```mermaid
+flowchart TD
+    F["Floci container stops<br/>(primary cloud lost)"]
+    U["Application unreachable<br/>(all gateway traffic is AWS-only)"]
+
+    F --> U
 ```
 
 This warm-standby scenario depends on the Azure replica becoming deployable,

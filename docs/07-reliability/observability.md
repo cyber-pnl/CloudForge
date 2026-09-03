@@ -12,19 +12,21 @@ The platform exposes, per poll cycle of the exporter:
 
 ## Live architecture
 
-```text
-Floci :4566 (AWS APIs)
-     │
-     ▼
-exporter :9877 ── /metrics (Prometheus text format)
-     │      │
-     │      └── push CloudForge/* gauges to CloudWatch
-     ▼                │
-Prometheus :9090 ◄────┘ (alarms reference pushed metrics)
-     │
-     ├── rules: DeadLetterQueueNotEmpty (evaluated), ApiDown (evaluated)
-     ▼
-Grafana :3000 — "CloudForge Overview" dashboard (provisioned JSON)
+```mermaid
+flowchart TD
+    FL["Floci :4566 (AWS APIs)"]
+    EX[exporter :9877]
+    MT["/metrics (Prometheus text format)"]
+    CW[CloudWatch]
+    PR[Prometheus :9090]
+    GR["Grafana :3000<br/>CloudForge Overview dashboard"]
+
+    FL --> EX
+    EX --> MT
+    MT --> PR
+    EX --> CW
+    CW --> PR
+    PR -->|"rules: DeadLetterQueueNotEmpty (evaluated), ApiDown (evaluated)"| GR
 ```
 
 ## Detection paths

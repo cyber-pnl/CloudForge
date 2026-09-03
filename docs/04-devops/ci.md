@@ -13,28 +13,31 @@ The workflow is responsible for validating the complete project.
 The workflow is split into six GitHub Actions **jobs** so every stage is a
 separate box on the run page:
 
-```text
-  Pull Request / Push / Dispatch
-        │
-        ├──────────────┬──────────────┐
-        ▼              ▼              ▼
- ┌─────────────┐ ┌───────────┐ ┌─────────────┐
- │ 1 · Validate│ │ 2 · Unit  │ │ 3 · Security│      (parallel)
- │     IaC     │ │   tests   │ │    gates    │
- └──────┬──────┘ └─────┬─────┘ └──────┬──────┘
-        └──────────────┼──────────────┘
-                       ▼
-             ┌──────────────────┐
-             │ 4 · Integration  │   floci → plan → apply → e2e
-             │   ephemeral dev  │   → destroy (always)
-             └────────┬─────────┘
-                      │
-        ┌─────────────┴──────────────────────┐
-        ▼                                    ▼
-┌──────────────────┐              ┌──────────────────────┐
-│ 5 · Promote to   │              │ 6 · Multi-cloud      │
-│     staging      │ (dispatch)   │  validation (Floci-AZ) │
-└──────────────────┘              └──────────────────────┘
+```mermaid
+flowchart TD
+    Trigger[Pull Request / Push / Dispatch]
+    J1["1 · Validate IaC"]
+    J2["2 · Unit tests"]
+    J3["3 · Security gates"]
+    J4["4 · Integration<br/>ephemeral dev"]
+    J5["5 · Promote to staging"]
+    J6["6 · Multi-cloud validation (Floci-AZ)"]
+
+    Trigger --> J1
+    Trigger --> J2
+    Trigger --> J3
+
+    subgraph parallel ["parallel"]
+        J1
+        J2
+        J3
+    end
+
+    J1 --> J4
+    J2 --> J4
+    J3 --> J4
+    J4 -->|manual dispatch: deploy_staging| J5
+    J4 --> J6
 ```
 
 Jobs 1–3 are deterministic, fast checks and run in parallel for fail-fast

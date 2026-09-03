@@ -73,15 +73,18 @@ Integration glue that binds resources across modules — event source mappings, 
 
 The AWS provider is pinned to `~> 5.0` for Floci compatibility — see [Local Environment](local-environment.md#provider-version-pinning).
 
-```text
-                ┌───────────────┐
-                │    Modules    │
-                └───────┬───────┘
-                        │
-         ┌──────────────┼──────────────┬──────────────┐
-         ▼              ▼              ▼              ▼
-        DEV          STAGING         PROD         DEV-AZ
-     (Floci)        (Floci)        (Floci)       (Floci-AZ)
+```mermaid
+flowchart TD
+    MOD[Modules]
+    DEV["DEV<br/>(Floci)"]
+    STG["STAGING<br/>(Floci)"]
+    PRD["PROD<br/>(Floci)"]
+    AZZ["DEV-AZ<br/>(Floci-AZ)"]
+
+    MOD --> DEV
+    MOD --> STG
+    MOD --> PRD
+    MOD --> AZZ
 ```
 
 ## Standard workflow
@@ -110,16 +113,18 @@ tofu plan
 
 Used for local development and automated validation.
 
-```text
-Developer → Floci → OpenTofu
+```mermaid
+flowchart LR
+    Dev[Developer] --> FL[Floci] --> OT[OpenTofu]
 ```
 
 ### Staging
 
 Used to validate the complete platform before production.
 
-```text
-GitHub → CI → Floci → OpenTofu
+```mermaid
+flowchart LR
+    GH[GitHub] --> CI[CI] --> FL[Floci] --> OT[OpenTofu]
 ```
 
 ### Production
@@ -158,8 +163,9 @@ Phase 4 (observability and security) provisions:
 - **Log Analytics** workspace for function logs (logs surface only)
 - **User-assigned managed identity** attached to the Function Apps
 
-```text
-CI → Floci-AZ → OpenTofu (azurerm provider)
+```mermaid
+flowchart LR
+    CI[CI] --> AZ[Floci-AZ] --> OT["OpenTofu (azurerm provider)"]
 ```
 
 > **Emulator note:** Floci-AZ Event Grid supports webhook destinations only. Storage Queue, Azure Function, and Service Bus event subscription destinations are not supported; domain/namespace surfaces are out of scope. See [local-environment.md](local-environment.md#event-grid) for details.

@@ -34,10 +34,17 @@ Underneath the platform engineering, CloudForge runs a small but realistic appli
 
 Projects move through an enforced state machine — an archived project never reopens:
 
-```text
-draft  ──→ active, archived
-active ──→ draft, archived
-archived ──→ terminal
+```mermaid
+stateDiagram-v2
+    draft: draft
+    active: active
+    archived: archived
+    terminal: terminal
+    draft --> active
+    draft --> archived
+    active --> draft
+    active --> archived
+    archived --> terminal
 ```
 
 Every write to users or projects flows through the event pipeline shown in the architecture diagram: a dispatcher turns each DynamoDB stream record into a domain event, and a worker persists an **immutable, timestamped trace** of every change in S3. Failed jobs retry three times, then land in a dead-letter queue that raises an alert.
@@ -50,46 +57,23 @@ The application logic lives in `lambdas/` (handlers plus shared `common/` module
 
 ## Architecture
 
-```text
-                          ┌──────────────────┐
-                          │    Developer     │
-                          └────────┬─────────┘
-                                   │
-                      ┌────────────┴────────────┐
-                      ▼                         ▼
-             ┌─────────────────┐      ┌─────────────────┐
-             │  Floci :4566    │      │  Floci-AZ :4577 │
-             │  (AWS)          │      │  (Azure)        │
-             └────────┬────────┘      └────────┬────────┘
-                      │                        │
-                      ▼                        ▼
-             ┌─────────────────┐      ┌─────────────────┐
-             │  AWS Cloud      │      │  Azure Cloud    │
-             │  Serverless     │      │  Serverless     │
-             │                 │      │                 │
-             │  API Gateway    │      │  API Management │
-             │  Lambda         │      │  Functions      │
-             │  DynamoDB       │      │  Cosmos DB      │
-             │  S3             │      │  Blob Storage   │
-             │  SQS / SNS      │      │  Queue / Event  │
-             │  EventBridge    │      │  Grid           │
-             │  CloudWatch     │      │  Azure Monitor  │
-             │  KMS            │      │  Key Vault      │
-             │  IAM            │      │  Entra ID       │
-             └───────┬────────┘      └───────┬────────┘
-                     │                        │
-                     └───────────┬────────────┘
-                                 ▼
-                     ┌──────────────────────┐
-                     │  Unified Gateway     │
-                     │   :4600 (AWS)      │
-                     └──────────────────────┘
-                     │
-                     ▼
-             ┌──────────────────────┐
-             │  Observability       │
-             │  Prometheus · Grafana│
-             └──────────────────────┘
+```mermaid
+flowchart TD
+    Dev[Developer]
+    AMZ["Floci :4566<br/>(AWS)"]
+    AZZ["Floci-AZ :4577<br/>(Azure)"]
+    AWS[<b>AWS Cloud</b> — Serverless<br/>API Gateway<br/>Lambda<br/>DynamoDB<br/>S3<br/>SQS / SNS<br/>EventBridge<br/>CloudWatch<br/>KMS<br/>IAM]
+    AZU[<b>Azure Cloud</b> — Serverless<br/>API Management<br/>Functions<br/>Cosmos DB<br/>Blob Storage<br/>Queue / Event Grid<br/>Azure Monitor<br/>Key Vault<br/>Entra ID]
+    GW["Unified Gateway :4600<br/>(AWS)"]
+    OBS[Observability<br/>Prometheus · Grafana]
+
+    Dev --> AMZ
+    Dev --> AZZ
+    AMZ --> AWS
+    AZZ --> AZU
+    AWS --> GW
+    AZU --> GW
+    GW --> OBS
 ```
 
 **Cloud A**: AWS (Floci) — serverless application platform.
@@ -108,20 +92,27 @@ curl http://localhost:4600/_localstack/health   # routes to Floci (AWS)
 
 ### Internal event-driven flow (AWS primary)
 
-```text
-API Gateway → Lambda Users / Lambda Projects
-                    │
-                    ▼
-               DynamoDB
-                 │ Stream
-                 ▼
-            EventBridge
-           ┌────┴────┐
-           ▼         ▼
-     SQS + DLQ      SNS
-           │
-           ▼
-     Worker Lambda → S3
+```mermaid
+flowchart TD
+    API["API Gateway"]
+    UL["Lambda Users"]
+    PL["Lambda Projects"]
+    DB[(DynamoDB)]
+    EB[EventBridge]
+    SQ["SQS + DLQ"]
+    SN[SNS]
+    WK["Worker Lambda"]
+    S3[(S3)]
+
+    API --> UL
+    API --> PL
+    UL --> DB
+    PL --> DB
+    DB -->|Stream| EB
+    EB --> SQ
+    EB --> SN
+    SQ --> WK
+    WK --> S3
 ```
 
 ---

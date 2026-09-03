@@ -19,25 +19,29 @@ trivy fs .
 
 The objective is to prevent insecure infrastructure from reaching the deployment stage.
 
-```text
-Developer
-    │
-    ▼
-Pull Request
-    │
-    ▼
-Trivy
-    │
-    ├── Vulnerabilities
-    ├── Secrets
-    ├── IaC Misconfiguration
-    └── Dependencies
-    │
-    ▼
-OpenTofu Validation
-    │
-    ▼
-Integration Tests
+```mermaid
+flowchart TD
+    Dev[Developer]
+    PR[Pull Request]
+    TRIVY[Trivy]
+    VULN[Vulnerabilities]
+    SEC[Secrets]
+    IAC[IaC Misconfiguration]
+    DEP[Dependencies]
+    TOFU[OpenTofu Validation]
+    INT[Integration Tests]
+
+    Dev --> PR
+    PR --> TRIVY
+    TRIVY --> VULN
+    TRIVY --> SEC
+    TRIVY --> IAC
+    TRIVY --> DEP
+    VULN --> TOFU
+    SEC --> TOFU
+    IAC --> TOFU
+    DEP --> TOFU
+    TOFU --> INT
 ```
 
 ## Least privilege

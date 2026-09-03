@@ -24,15 +24,18 @@ containers on the Azure instance (Phases 11-12).
 
 ## Deployment flow
 
-```text
-commit → ci pipeline (dev + dev-az)
-             │ pytest, fmt, validate, trivy gates
-             │ plan → apply → e2e checks
-             ▼
-        green build ──(manual dispatch: deploy_staging)──► staging
-                                                              │ apply + e2e checks
-                                                             ▼
-                                                       prod: local apply
+```mermaid
+flowchart TD
+    Commit[commit]
+    CI["ci pipeline (dev + dev-az)"]
+    GATES["pytest, fmt, validate, trivy gates"]
+    ALSO["plan → apply → e2e checks"]
+    GREEN[green build]
+    STAGE["staging<br/>apply + e2e checks"]
+    PROD["prod: local apply"]
+
+    Commit --> CI --> GATES --> ALSO --> GREEN
+    GREEN -. "(manual dispatch: deploy_staging)" .-> STAGE --> PROD
 ```
 
 * Dev is destroyed and rebuilt every run — the pipeline itself is the DR drill.

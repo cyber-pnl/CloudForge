@@ -42,25 +42,33 @@ Local credentials are dummy values (`test` / `test`, configured once in `~/.aws/
 
 ## How OpenTofu uses Floci
 
-```text
-OpenTofu
-    │
-    │ AWS API
-    ▼
-Floci :4566
-    │
-    ├── S3
-    ├── Lambda
-    ├── DynamoDB
-    ├── SQS
-    ├── SNS
-    ├── EventBridge
-    └── API Gateway
+```mermaid
+flowchart TD
+    OT[OpenTofu]
+    FL[Floci :4566]
+    S3[S3]
+    LAM[Lambda]
+    DDB[DynamoDB]
+    SQS[SQS]
+    SNS[SNS]
+    EB[EventBridge]
+    AG[API Gateway]
+    OBS["Observability stack (docker compose)"]
+    EX["exporter :9877<br/>polls Floci APIs, serves /metrics,<br/>pushes CloudForge/* metrics"]
+    PR[prometheus :9090<br/>scrapes exporter, evaluates alert rules]
+    GR["grafana :3000<br/>dashboards (provisioned, anonymous viewer access)"]
 
-Observability stack (docker compose)
-    exporter :9877   polls Floci APIs, serves /metrics, pushes CloudForge/* metrics
-    prometheus :9090 scrapes exporter, evaluates alert rules
-    grafana :3000    dashboards (provisioned, anonymous viewer access)
+    OT -->|AWS API| FL
+    FL --> S3
+    FL --> LAM
+    FL --> DDB
+    FL --> SQS
+    FL --> SNS
+    FL --> EB
+    FL --> AG
+    OBS --> EX
+    EX --> PR
+    PR --> GR
 ```
 
 ## Emulator-specific behavior
@@ -168,22 +176,30 @@ curl -s localhost:4577/_floci/health | python3 -m json.tool
 
 ### How OpenTofu uses Floci-AZ
 
-```text
-OpenTofu (azurerm provider)
-    │
-    │ Azure API (HTTPS)
-    ▼
-Floci-AZ :4577
-    │
-    ├── Azure Functions (compute)
-    ├── API Management (routing)
-    ├── Cosmos DB (data)
-    ├── Blob Storage (objects)
-    ├── Queue Storage (messaging)
-    ├── Event Grid (events)
-    ├── Azure Monitor (observability)
-    ├── Key Vault (secrets & keys)
-    └── Entra ID (identity)
+```mermaid
+flowchart TD
+    OT["OpenTofu<br/>(azurerm provider)"]
+    AZ[Floci-AZ :4577]
+    FN["Azure Functions (compute)"]
+    APIM["API Management (routing)"]
+    CDB["Cosmos DB (data)"]
+    BLOB["Blob Storage (objects)"]
+    QUEUE["Queue Storage (messaging)"]
+    EG["Event Grid (events)"]
+    MON["Azure Monitor (observability)"]
+    KV["Key Vault (secrets & keys)"]
+    ENTRA["Entra ID (identity)"]
+
+    OT -->|"Azure API (HTTPS)"| AZ
+    AZ --> FN
+    AZ --> APIM
+    AZ --> CDB
+    AZ --> BLOB
+    AZ --> QUEUE
+    AZ --> EG
+    AZ --> MON
+    AZ --> KV
+    AZ --> ENTRA
 ```
 
 ### TLS is mandatory for the azurerm provider

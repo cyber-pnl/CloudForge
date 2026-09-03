@@ -6,23 +6,17 @@ Replication complète de l'infrastructure AWS dans Azure via Floci-AZ, avec un g
 
 ## Architecture cible
 
-```text
-                         ┌──────────────────┐
-                         │    Developer     │
-                         └────────┬─────────┘
-                                  │
-                     ┌────────────┴────────────┐
-                     ▼                         ▼
-            ┌─────────────────┐      ┌─────────────────┐
-            │  AWS Cloud      │      │  Azure Cloud    │
-            │  (Floci :4566)  │      │  (Floci-AZ:4577)│
-            └────────┬────────┘      └────────┬────────┘
-                     │                        │
-                     ▼                        ▼
-            ┌─────────────────┐      ┌─────────────────┐
-            │  Unified Gateway│ 50/50│                 │
-            │     :4600       │◄────►│                 │
-            └─────────────────┘      └─────────────────┘
+```mermaid
+flowchart TD
+    Dev[Developer]
+    AWS["AWS Cloud<br/>(Floci :4566)"]
+    AZU["Azure Cloud<br/>(Floci-AZ :4577)"]
+    GW[Unified Gateway :4600]
+
+    Dev --> AWS
+    Dev --> AZU
+    AWS -->|50/50| GW
+    AZU -->|50/50| GW
 ```
 
 ## Mapping des services

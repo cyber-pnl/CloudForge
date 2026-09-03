@@ -20,99 +20,52 @@ The goal is to reproduce the **engineering workflow surrounding a production clo
 
 ## Event-Driven Architecture
 
-```text
-                              ┌──────────────────┐
-                              │    Developer     │
-                              └────────┬─────────┘
-                                       │
-                                       ▼
-                              ┌──────────────────┐
-                              │   API Gateway    │
-                              └────────┬─────────┘
-                                       │
-                         ┌─────────────┴─────────────┐
-                         │                           │
-                         ▼                           ▼
-                 ┌───────────────┐         ┌────────────────┐
-                 │ Lambda Users  │         │Lambda Projects │
-                 └──────┬────────┘         └───────┬────────┘
-                        │                          │
-                        └───────────┬──────────────┘
-                                    │
-                                    ▼
-                             ┌──────────────┐
-                             │   DynamoDB   │
-                             └──────┬───────┘
-                                    │
-                                 Stream
-                                    │
-                                    ▼
-                             ┌──────────────┐
-                             │  EventBridge │
-                             └──────┬───────┘
-                                    │
-                        ┌───────────┴───────────┐
-                        │                       │
-                        ▼                       ▼
-                ┌──────────────┐       ┌───────────────┐
-                │ SQS + DLQ    │       │ SNS           │
-                │              │       │ Notifications │
-                └──────┬───────┘       └───────────────┘
-                       │
-                       ▼
-                ┌──────────────┐
-                │ Worker Lambda│
-                └──────┬───────┘
-                       │
-                       ▼
-                ┌──────────────┐
-                │      S3      │
-                └──────────────┘
+```mermaid
+flowchart TD
+    Dev[Developer]
+    GW[API Gateway]
+    UL[Lambda Users]
+    PL[Lambda Projects]
+    DB[(DynamoDB)]
+    EB[EventBridge]
+    SQ[SQS + DLQ]
+    SN[SNS Notifications]
+    WK[Worker Lambda]
+    S3[(S3)]
+
+    Dev --> GW
+    GW --> UL
+    GW --> PL
+    UL --> DB
+    PL --> DB
+    DB -->|Stream| EB
+    EB --> SQ
+    EB --> SN
+    SQ --> WK
+    WK --> S3
 ```
 
 ## Multi-Cloud Architecture
 
-```text
-                    ┌──────────────────┐
-                    │    Developer     │
-                    └────────┬─────────┘
-                             │
-                 ┌───────────┴───────────┐
-                 ▼                       ▼
-        ┌────────────────┐     ┌────────────────┐
-        │ Unified Gateway│     │  Web Console   │
-        │   :4600        │     │   :8080        │
-        │ (AWS-only)     │     └────────────────┘
-        └───────┬────────┘
-                │
-        ┌───────┴───────┐
-        ▼               ▼
-┌──────────────┐ ┌───────────────┐
-│ Floci :4566  │ │ Floci-AZ :4577│
-│ (AWS)        │ │ (Azure)       │
-└──────┬───────┘ └───────┬───────┘
-       │                  │
-       ▼                  ▼
-┌──────────────┐ ┌───────────────┐
-│  AWS Cloud   │ │  Azure Cloud  │
-│  Serverless  │ │  Serverless   │
-│              │ │               │
-│  API Gateway │ │ API Management│
-│  Lambda      │ │ Functions     │
-│  DynamoDB    │ │ Cosmos DB     │
-│  S3          │ │ Blob Storage  │
-│  SQS / SNS   │ │ Queue Storage │
-│  EventBridge │ │ Event Grid    │
-│  CloudWatch  │ │ Azure Monitor │
-│  KMS / IAM   │ │ Key Vault/Entra│
-└──────┬───────┘ └───────────────┘
-       │
-       ▼
-┌──────────────┐
-│ Observability│
-│ Prometheus   │
-│ Grafana      │
-└──────────────┘
+```mermaid
+flowchart TD
+    Dev[Developer]
+    GW["Unified Gateway :4600<br/>(AWS-only)"]
+    WC[Web Console :8080]
+    AMZ["Floci :4566<br/>(AWS)"]
+    AZZ["Floci-AZ :4577<br/>(Azure)"]
+    AWS[<b>AWS Cloud</b> — Serverless<br/>API Gateway · Lambda · DynamoDB<br/>S3 · SQS/SNS · EventBridge<br/>CloudWatch · KMS / IAM]
+    AZU[<b>Azure Cloud</b> — Serverless<br/>API Management · Functions<br/>Cosmos DB · Blob Storage<br/>Queue Storage · Event Grid<br/>Azure Monitor · Key Vault/Entra]
+    OBS[Observability<br/>Prometheus · Grafana]
+
+    Dev --> GW
+    Dev --> WC
+    GW --> AMZ
+    GW --> AZZ
+    AMZ --> AWS
+    AZZ --> AZU
+    AWS --> OBS
+    AZU --> OBS
 ```
 
 ## Why CloudForge?
