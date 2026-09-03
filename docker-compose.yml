@@ -18,7 +18,12 @@ services:
       - "4577:4577"
       - "5672:5672"
       - "5673:5673"
+    environment:
+      # TLS is required by the azurerm provider: it discovers the cloud over
+      # HTTPS (GET /metadata/endpoints). See docs/02-infrastructure/local-environment.md.
+      FLOCI_AZ_TLS_ENABLED: "true"
     volumes:
+      - ./data/floci-az:/app/data        # persist generated TLS cert across restarts
       - /var/run/docker.sock:/var/run/docker.sock
 
   gateway:
