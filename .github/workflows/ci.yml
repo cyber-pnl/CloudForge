@@ -221,9 +221,6 @@ jobs:
       - name: OpenTofu plan against Floci-AZ
         run: tofu -chdir=infrastructure/environments/dev-az plan -input=false
 
-      - name: Apply Azure stack
-        run: tofu -chdir=infrastructure/environments/dev-az apply -auto-approve -input=false
-
       - name: Verify Floci-AZ health
         run: |
           curl -sf http://localhost:4577/_floci/health | python3 -c "
@@ -232,8 +229,3 @@ jobs:
           assert h, 'Floci-AZ health check failed'
           print('Floci-AZ health OK')
           "
-
-      - name: Destroy Azure stack
-        if: always()
-        continue-on-error: true
-        run: tofu -chdir=infrastructure/environments/dev-az destroy -auto-approve -input=false
