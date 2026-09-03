@@ -9,18 +9,21 @@ The infrastructure is divided into reusable modules.
 ```text
 infrastructure/
 │
-├── modules/                  # Reusable OpenTofu modules (AWS)
-│   ├── api-gateway/
-│   ├── cloudwatch/
-│   ├── dynamodb/
-│   ├── eventbridge/
-│   ├── iam/
-│   ├── kms/
-│   ├── lambda/
-│   ├── platform/
-│   ├── s3/
-│   ├── sns/
-│   └── sqs/
+├── modules/                  # Reusable OpenTofu modules
+│   ├── api-gateway/          # AWS API Gateway
+│   ├── cloudwatch/           # AWS CloudWatch alarms
+│   ├── dynamodb/             # AWS DynamoDB tables
+│   ├── eventbridge/          # AWS EventBridge
+│   ├── iam/                  # AWS IAM roles
+│   ├── kms/                  # AWS KMS keys
+│   ├── lambda/               # AWS Lambda functions
+│   ├── platform/             # AWS platform compositor (all sub-modules)
+│   ├── s3/                   # AWS S3 buckets
+│   ├── sns/                  # AWS SNS topics
+│   ├── sqs/                  # AWS SQS queues
+│   ├── az-cosmosdb/          # Azure Cosmos DB (SQL API)
+│   ├── az-storage/           # Azure Storage (Blob + Queue)
+│   └── az-keyvault/          # Azure Key Vault
 │
 ├── environments/
 │   ├── dev/                  # Ephemeral AWS dev
@@ -48,6 +51,9 @@ Additional modules are added in later phases following the same pattern.
 | `sqs`        | queue | Asynchronous processing; optional CMK encryption. |
 | `sns`        | topic | Notifications fan-out; optional CMK encryption. |
 | `eventbridge`| custom bus, rules with single target each | Domain events routing; patterns are passed as JSON strings. |
+| `az-cosmosdb`| Cosmos DB account (SQL API), SQL database, SQL containers | Application data tables; Azure equivalent of DynamoDB. |
+| `az-storage` | Storage account, blob containers, storage queues | Object storage and async messaging; Azure equivalent of S3 + SQS. |
+| `az-keyvault` | Key Vault, secrets | Application secrets and encryption keys; Azure equivalent of KMS. |
 
 Each environment consumes the same reusable modules with environment-specific configuration.
 
@@ -112,11 +118,25 @@ Represents the desired production architecture. The project is initially execute
 
 ### Azure dev-az
 
-Azure development environment (Floci-AZ) replicating the full serverless platform locally. Provisions API Management, Azure Functions, Cosmos DB, Blob Storage, Queue Storage, Event Grid, Azure Monitor, Key Vault and Entra ID through the `azurerm` provider against the Floci-AZ emulator.
+Azure development environment (Floci-AZ) replicating the serverless platform locally.
+
+```text
+infrastructure/environments/dev-az/
+    main.tf        # azurerm provider → Floci-AZ, resource group, modules
+    variables.tf   # subscription_id, tenant_id, metadata_host, name_prefix
+    outputs.tf     # cosmosdb/ storage/ keyvault names and connection strings
+```
+
+Phase 1 (foundations) provisions:
+- **Cosmos DB** account with SQL database and containers (users, projects)
+- **Storage** account with blob containers (artifacts) and queues (jobs, jobs-dlq)
+- **Key Vault** for application secrets
 
 ```text
 CI → Floci-AZ → OpenTofu (azurerm provider)
 ```
+
+The `azurerm` provider is configured with `environment = "stack"` and `metadata_host = "localhost:4577"` to discover the cloud via Floci-AZ's HTTPS metadata endpoint. TLS is required — see [local-environment.md](local-environment.md#tls-is-mandatory-for-the-azurerm-provider).
 
 See [deployment-strategy.md](../04-devops/deployment-strategy.md) for the full topology.
 

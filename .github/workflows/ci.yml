@@ -198,7 +198,7 @@ jobs:
         run: |
           docker compose up -d floci-az
           for attempt in $(seq 1 30); do
-            if curl -sf http://localhost:4577/_flociaz/health > /dev/null 2>&1; then
+            if curl -sf http://localhost:4577/_floci/health > /dev/null 2>&1; then
               echo "Floci-AZ is up"
               break
             fi
@@ -226,7 +226,7 @@ jobs:
 
       - name: Verify Floci-AZ health
         run: |
-          curl -sf http://localhost:4577/_flociaz/health | python3 -c "
+          curl -sf http://localhost:4577/_floci/health | python3 -c "
           import json, sys
           h = json.load(sys.stdin)
           assert h, 'Floci-AZ health check failed'

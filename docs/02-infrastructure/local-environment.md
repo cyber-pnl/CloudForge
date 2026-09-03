@@ -145,7 +145,7 @@ overall distribution converges to 50/50.
 ```bash
 # Explicit routing
 curl -H "X-Region: aws" http://localhost:4600/_localstack/health
-curl -H "X-Region: azure" http://localhost:4600/_flociaz/health
+curl -H "X-Region: azure" http://localhost:4600/_floci/health
 
 # Random routing
 curl http://localhost:4600/_localstack/health
@@ -170,7 +170,7 @@ http://localhost:4577
 ### Health check
 
 ```bash
-curl -s localhost:4577/_flociaz/health | python3 -m json.tool
+curl -s localhost:4577/_floci/health | python3 -m json.tool
 ```
 
 ### How OpenTofu uses Floci-AZ
@@ -178,7 +178,7 @@ curl -s localhost:4577/_flociaz/health | python3 -m json.tool
 ```text
 OpenTofu (azurerm provider)
     │
-    │ Azure API
+    │ Azure API (HTTPS)
     ▼
 Floci-AZ :4577
     │
@@ -192,6 +192,55 @@ Floci-AZ :4577
     ├── Key Vault (secrets & keys)
     └── Entra ID (identity)
 ```
+
+### TLS is mandatory for the azurerm provider
+
+The `azurerm` provider discovers Azure over HTTPS (`GET https://{host}/metadata/endpoints`).
+Floci-AZ serves plain HTTP by default — the provider fails before any resource request.
+
+`FLOCI_AZ_TLS_ENABLED=true` is set in `docker-compose.yml`. Floci-AZ serves HTTP and
+HTTPS on the same port (`4577`) via a protocol-sniffing proxy. A self-signed certificate
+is generated at startup.
+
+Trust the certificate before running `tofu` against Floci-AZ:
+
+```bash
+curl -sf http://localhost:4577/_floci/tls-cert -o floci-az.crt
+# Linux (requires sudo):
+sudo cp floci-az.crt /usr/local/share/ca-certificates/ && sudo update-ca-certificates
+# OR without sudo (set SSL_CERT_FILE):
+export SSL_CERT_FILE="$PWD/floci-az.crt"
+```
+
+### azurerm provider block (Floci-AZ)
+
+```hcl
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3.0"
+    }
+  }
+}
+
+provider "azurerm" {
+  features {}
+  skip_provider_registration = true
+  use_cli                    = false
+
+  environment   = "stack"
+  metadata_host = "localhost:4577"
+
+  subscription_id = "00000000-0000-0000-0000-000000000001"
+  tenant_id       = "00000000-0000-0000-0000-000000000002"
+  client_id       = "00000000-0000-0000-0000-000000000003"
+  client_secret   = "fake-secret"
+}
+```
+
+`environment = "stack"` tells the provider to use metadata discovery.
+Credentials are never validated by Floci-AZ in dev mode.
 
 ### Emulator-specific behavior
 
