@@ -11,7 +11,7 @@ back out of a bad deployment. The topology is defined in
 | dev | `infrastructure/environments/dev` | AWS (Floci) | ephemeral | CI on every push/PR; `make apply` locally |
 | staging | `infrastructure/environments/staging` | AWS (Floci) | long-lived | CI manual dispatch (promotion) or local apply |
 | prod | `infrastructure/environments/prod` | AWS (Floci) | long-lived | explicit local apply only |
-| dev-az | `infrastructure/environments/dev-az` | Azure (Floci-AZ) | ephemeral | CI on every push/PR; `make apply` locally |
+| dev-az | `infrastructure/environments/dev-az` | Azure (Floci-AZ) | ephemeral | CI validates to `plan` only (`make apply` blocked — see multicloud-journal) |
 
 The AWS environments all wrap the same platform module, so behavior
 differences come from inputs only — never from drifted code.
@@ -87,20 +87,18 @@ explicit in production.
 
 ### Path B — Floci lost (failover to Azure)
 
-Scenario: the primary cloud is unavailable or corrupted beyond rebuild.
-The application fails over to the Azure DR site running as Docker
-containers on the standby instance.
+> **Blocked.** Azure failover is not currently exercisable. Azure Functions
+> cannot be provisioned (Floci-AZ lacks `Microsoft.Web/serverfarms`), so the
+> `apply` of `dev-az` cannot complete and there is no running Azure workload.
+> The gateway routes all traffic to Floci (AWS). When Floci is lost, the
+> application is unreachable until Floci returns. See
+> `docs/02-infrastructure/multicloud-journal.md`.
 
-Procedure (runbook RB-04, Phases 11-12):
-
-1. Provision Azure infrastructure: `tofu -chdir=infrastructure/environments/dev-az apply`
-2. Sync data: Cosmos DB → PostgreSQL migration script
-3. Deploy containers: `docker compose -f docker-compose.dr.yml up -d`
-4. Update DNS / API endpoint to Azure instance public IP
-5. Verify: `curl -H "Authorization: Bearer local-dev-token" https://<instance-ip>/users`
-
-Expected recovery time: 15-30 minutes (infrastructure + data sync + deploy).
-Data loss: delta between last Cosmos DB backup and failover moment.
+Scenario: the primary cloud is unavailable or corrupted beyond rebuild. The
+application would fail over to an Azure DR site. This requires the Azure replica
+to become deployable first (Floci-AZ Function App support), then re-provision
+the Azure stack, restore a two-backend gateway, and only then can the failover
+procedure be re-established.
 
 ## Known constraints
 

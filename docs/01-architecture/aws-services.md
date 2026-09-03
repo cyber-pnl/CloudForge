@@ -2,7 +2,7 @@
 
 CloudForge intentionally uses services from two clouds to demonstrate different cloud patterns: **AWS** (serverless primary) and **Azure** (replicated serverless platform).
 
-The AWS environment is the primary platform. The Azure environment replicates the same serverless application platform so the gateway can route traffic 50/50 across both clouds.
+The AWS environment is the primary platform. The Azure environment replicates the same serverless application platform so the gateway can route traffic across both clouds (currently routed entirely to AWS pending Floci-AZ Function App support; see `../02-infrastructure/multicloud-journal.md`).
 
 ## AWS Services (Primary — Floci)
 
@@ -47,7 +47,7 @@ Both clouds run locally through their respective emulators:
 | Floci    | :4566 | AWS  |
 | Floci-AZ | :4577 | Azure |
 
-A unified nginx gateway on `:4600` routes requests to either backend — 50/50 split, or pinned by the `X-Cloud` header (see [Unified Cloud Gateway](../02-infrastructure/local-environment.md#unified-cloud-gateway)).
+A unified nginx gateway on `:4600` routes requests to the backends. It currently routes **all** traffic to Floci (AWS); the 50/50 Azure split is deferred until Floci-AZ can provision Azure Functions (see `../02-infrastructure/multicloud-journal.md`).
 
 See [Local Environment](../02-infrastructure/local-environment.md) for usage details and emulator-specific behavior.
 

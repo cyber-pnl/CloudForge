@@ -142,9 +142,14 @@ Phase 1 (foundations) provisions:
 - **Storage** account with blob containers (artifacts) and queues (jobs, jobs-dlq)
 - **Key Vault** for application secrets
 
-Phase 2 (compute and gateway) provisions:
+Phase 2 (compute and gateway) plans:
 - **Azure Functions** service plans and Linux Function Apps (users, projects, worker, dispatcher)
 - **API Management** instance with Users and Projects APIs
+
+> **Emulator blocker:** the Azure Functions service plans (`Microsoft.Web/serverfarms`)
+> are **not emulated** by Floci-AZ, so `tofu apply` of `dev-az` cannot complete.
+> The environment is validated at `plan` level only. See
+> [multicloud-journal.md](multicloud-journal.md).
 
 Phase 3 (messaging and events) provisions:
 - **Event Grid** custom topic with webhook event subscriptions

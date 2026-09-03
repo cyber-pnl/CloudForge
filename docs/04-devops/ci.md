@@ -44,7 +44,10 @@ The promote job appears as "skipped" unless the run was dispatched with
 
 The multi-cloud job validates the Azure DR environment against the Floci-AZ
 emulator (job 6), exercising a second cloud provider through the same IaC
-gates (`fmt-check`, `validate`, `plan`, apply, destroy) in the single workflow.
+gates (`fmt-check`, `validate`, `plan`) in the single workflow. It stops at
+**plan**: the Azure `apply` is not run because Azure Functions cannot be
+provisioned (Floci-AZ does not emulate `Microsoft.Web/serverfarms`) — see
+`docs/02-infrastructure/multicloud-journal.md`.
 
 The plan validates the full provider interaction against the emulator; the apply stage deploys the stack so the integration tests can exercise real endpoints (`scripts/integration-tests.sh`). The final destroy only cleans the ephemeral runner environment — its failure never masks a pipeline failure.
 

@@ -42,27 +42,24 @@ Full lifecycle documented in [INC-002](incidents/INC-002-emulator-outage.md).
 
 ## Scenario 3 — Azure failover (Floci down → Azure site active)
 
+> **Status: blocked — not currently exercisable.** Azure Functions cannot be
+> provisioned (Floci-AZ lacks `Microsoft.Web/serverfarms`), so there is no
+> running Azure workload to fail over to. See
+> [multicloud-journal.md](../02-infrastructure/multicloud-journal.md). The
+> gateway routes all traffic to Floci (AWS), so when Floci is down the
+> application is unreachable.
+
 ```text
 Floci container stops (primary cloud lost)
      │
      ▼
-Application unreachable on AWS endpoints
-     │
-     ▼
-Azure stack (docker-compose.az.yml) already running
-     │
-     ▼
-Traffic redirected to reverse proxy (:8081)
-     │
-     ▼
-Azure stack serves application from Floci-AZ infrastructure
+Application unreachable (all gateway traffic is AWS-only)
 ```
 
-This scenario validates the warm-standby disaster-recovery topology defined
-in ADR-005. The Azure site runs a containerized version of the application with
-local PostgreSQL, Redis and filesystem-backed storage. See
-[deployment-strategy.md](../04-devops/deployment-strategy.md) Path B for the
-full procedure.
+This warm-standby scenario depends on the Azure replica becoming deployable,
+which is blocked pending Floci-AZ Function App support. When resolved, restore
+the two-backend gateway (50/50 or `X-Cloud` pinning) and re-provision the
+Azure stack before re-enabling this scenario.
 
 ## Incident documentation
 

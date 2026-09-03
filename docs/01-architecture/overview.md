@@ -11,7 +11,8 @@ CloudForge is designed around six main objectives:
 * Implement a complete **CI pipeline** (single workflow, six jobs)
 * Integrate **DevSecOps practices with Trivy**
 * Test AWS infrastructure locally using **Floci** and Azure using **Floci-AZ**
-* Provide a **unified cloud gateway** routing 50/50 between the two clouds
+* Provide a **unified cloud gateway** routing traffic (currently AWS-only; see
+  `02-infrastructure/multicloud-journal.md`)
 
 The goal is not simply to deploy an application.
 
@@ -81,7 +82,7 @@ The goal is to reproduce the **engineering workflow surrounding a production clo
         ┌────────────────┐     ┌────────────────┐
         │ Unified Gateway│     │  Web Console   │
         │   :4600        │     │   :8080        │
-        │ (50/50 split)  │     └────────────────┘
+        │ (AWS-only)     │     └────────────────┘
         └───────┬────────┘
                 │
         ┌───────┴───────┐
@@ -128,6 +129,6 @@ It is a **DevOps laboratory** designed to demonstrate how a cloud platform can b
 * operated
 * and recovered from failures
 
-The project uses Floci to reproduce AWS locally, Floci-AZ to reproduce Azure locally, OpenTofu to manage infrastructure declaratively across both, a unified nginx gateway to route 50/50 between them, and Trivy to introduce security directly into the development lifecycle.
+The project uses Floci to reproduce AWS locally, Floci-AZ to reproduce Azure locally, OpenTofu to manage infrastructure declaratively across both, a unified nginx gateway to route traffic (currently all to Floci/AWS), and Trivy to introduce security directly into the development lifecycle. The gateway's 50/50 multi-cloud routing is deferred pending Floci-AZ Function App support (see `02-infrastructure/multicloud-journal.md`).
 
 The architecture is designed to evolve from a local development environment toward a realistic production deployment model.

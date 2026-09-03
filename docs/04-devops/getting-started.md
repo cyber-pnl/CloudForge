@@ -45,7 +45,7 @@ curl -sf http://localhost:4566/_localstack/health | python3 -m json.tool | head 
 curl -sf http://localhost:4577/health             | python3 -m json.tool | head -3   # Floci-AZ
 ```
 
-Test the unified gateway (random routing):
+Test the unified gateway (all traffic routed to Floci / AWS):
 
 ```bash
 curl -sf http://localhost:4600/_localstack/health | head -c 80
@@ -128,7 +128,7 @@ docker compose up -d
 
 | Service | URL | Purpose |
 | ------- | --- | ------- |
-| Unified gateway | http://localhost:4600 | Routes to Floci or Floci-AZ (by `X-Cloud` header or random) |
+| Unified gateway | http://localhost:4600 | Routes traffic to Floci (AWS) |
 | Exporter | http://localhost:9877/metrics | Prometheus-format metrics polled from Floci |
 | Prometheus | http://localhost:9090 | Scrapes the exporter, evaluates alert rules |
 | Grafana | http://localhost:3000 | Provisioned "CloudForge Overview" dashboard (anonymous viewer, admin/admin for editing) |

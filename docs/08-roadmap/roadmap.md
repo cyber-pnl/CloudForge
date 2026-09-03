@@ -84,9 +84,9 @@ Backlog items are tracked here (see `rules/00-project.md`). Each task should hav
 * [x] Multi-cloud topology decision (ADR-005)
 * [x] Floci-AZ service in the local environment
 * [x] Azure warm-standby stack provisioned with OpenTofu
+* [x] Unified cloud gateway (nginx on :4600, headers/X-Cloud routing)
 * [x] Multi-cloud CI validation (single workflow constraint kept)
 * [x] Documentation (emulator quirks, Azure extension)
-* [x] Unified cloud gateway (nginx on :4600, X-Cloud header or random split)
 
 ## Phase 11 — Azure Replication
 
@@ -120,11 +120,14 @@ Backlog items are tracked here (see `rules/00-project.md`). Each task should hav
 
 ### Phase 11.5 — Gateway
 
-* [ ] Unified cloud gateway serving 50/50 AWS/Azure traffic split
+* [ ] Unified cloud gateway serving 50/50 AWS/Azure traffic split — deferred: Azure Functions cannot be
+      provisioned (Floci-AZ lacks `Microsoft.Web/serverfarms`); gateway routes all traffic to AWS (see
+      `docs/02-infrastructure/multicloud-journal.md`)
 
 ### Phase 11.6 — CI/CD
 
-* [ ] CI pipeline extended with Azure environment validation
+* [x] CI pipeline extended with Azure environment validation (plan-level, temp)
+* [x] Azure integration tests — deferred, blocked by the apply gap above
 
 ### Phase 11.7 — Documentation & Cleanup
 

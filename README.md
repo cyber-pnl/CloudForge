@@ -4,7 +4,7 @@
 
 CloudForge reproduces a realistic **multi-cloud** production environment locally — no real AWS or Azure account required. It combines **Infrastructure as Code, CI/CD, security scanning, containerization, event-driven architecture and observability** to demonstrate the engineering workflow surrounding a production cloud platform.
 
-The infrastructure is provisioned with **OpenTofu** against **Floci** (local AWS emulator) and **Floci-AZ** (local Azure emulator), behind a **unified gateway** splitting traffic 50/50 between the two clouds. A single CI pipeline validates infrastructure, scans security and runs automated tests.
+The infrastructure is provisioned with **OpenTofu** against **Floci** (local AWS emulator) and **Floci-AZ** (local Azure emulator), behind a **unified gateway** (currently routing to AWS). A single CI pipeline validates infrastructure, scans security and runs automated tests.
 
 ---
 
@@ -12,7 +12,7 @@ The infrastructure is provisioned with **OpenTofu** against **Floci** (local AWS
 
 * **Local AWS simulation** — Floci provides AWS-compatible APIs on `localhost:4566`
 * **Local Azure simulation** — Floci-AZ provides Azure-compatible APIs on `localhost:4577`
-* **Unified cloud gateway** — a single nginx gateway on `localhost:4600` routing 50/50 between AWS and Azure (by `X-Cloud` header or random split)
+* **Unified cloud gateway** — a single nginx gateway on `localhost:4600` (routes to AWS; multi-cloud split deferred pending Floci-AZ support)
 * **Infrastructure as Code** — declarative, reusable OpenTofu modules per cloud service
 * **Event-driven architecture** — API Gateway → Lambda → DynamoDB → Streams → EventBridge → SQS/SNS → S3 (AWS) mirrored by API Management → Functions → Cosmos DB → Event Grid → Queue → Blob (Azure)
 * **Web console** — browser UI for the domain served by nginx with a same-origin API proxy
@@ -82,7 +82,7 @@ The application logic lives in `lambdas/` (handlers plus shared `common/` module
                                  ▼
                      ┌──────────────────────┐
                      │  Unified Gateway     │
-                     │   :4600 (50/50)      │
+                     │   :4600 (AWS)      │
                      └──────────────────────┘
                      │
                      ▼
@@ -94,15 +94,17 @@ The application logic lives in `lambdas/` (handlers plus shared `common/` module
 
 **Cloud A**: AWS (Floci) — serverless application platform.
 **Cloud B**: Azure (Floci-AZ) — replicated serverless application platform.
-**Unified gateway**: nginx routes to either cloud by `X-Cloud` header, or a random 50/50 split.
+**Unified gateway**: nginx on `:4600` currently routes **all** traffic to AWS. The 50/50 split and `X-Cloud` pinning are deferred pending Floci-AZ Function App support (see `docs/02-infrastructure/multicloud-journal.md`).
 
 ### Gateway routing
 
-| Mode | Behavior |
-|------|----------|
-| `X-Cloud: aws` | All requests → Floci (AWS) |
-| `X-Cloud: azure` | All requests → Floci-AZ (Azure) |
-| No header | Random 50/50 split between the two clouds |
+The gateway on `:4600` currently sends **all** requests to the AWS backend
+(Floci). The `X-Cloud` header and the 50/50 split were removed pending
+Floci-AZ Function App support; see `docs/02-infrastructure/multicloud-journal.md`.
+
+```bash
+curl http://localhost:4600/_localstack/health   # routes to Floci (AWS)
+```
 
 ### Internal event-driven flow (AWS primary)
 

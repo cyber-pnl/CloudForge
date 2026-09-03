@@ -129,25 +129,18 @@ Floci does not persist or read back some attributes that the provider writes. Ev
 
 ## Unified Cloud Gateway
 
-A lightweight nginx gateway sits in front of both Floci and Floci-AZ and provides
-a **single entry point** on `http://localhost:4600`:
+A lightweight nginx gateway sits in front of Floci and provides a **single entry
+point** on `http://localhost:4600`. It currently routes **all** traffic to the
+AWS backend (Floci).
 
-| Mode | Behavior |
-|------|----------|
-| `X-Cloud: aws` | All requests → Floci (AWS) |
-| `X-Cloud: azure` | All requests → Floci-AZ (Azure) |
-| No header | Random 50/50 split between the two backends |
-
-The split is deterministic per request (`split_clients` hashing `$request_id`)
-so the same request always lands on the same backend within a burst, but the
-overall distribution converges to 50/50.
+> A previous iteration load-balanced 50/50 between Floci and Floci-AZ. That
+> split and the Azure backend were removed because Azure Functions cannot be
+> provisioned (Floci-AZ does not emulate `Microsoft.Web/serverfarms`), so there
+> is no deployable Azure workload behind the gateway. See
+> `multicloud-journal.md`.
 
 ```bash
-# Explicit routing
-curl -H "X-Cloud: aws" http://localhost:4600/_localstack/health
-curl -H "X-Cloud: azure" http://localhost:4600/_floci/health
-
-# Random routing
+# All traffic routes to the AWS backend
 curl http://localhost:4600/_localstack/health
 ```
 
@@ -241,6 +234,10 @@ provider "azurerm" {
 
 `environment = "stack"` tells the provider to use metadata discovery.
 Credentials are never validated by Floci-AZ in dev mode.
+
+> **Note — applicabilité limitée :** l'environnement Azure n'est validé qu'au
+> niveau **plan** (déploiement non fonctionnel). Voir
+> `docs/02-infrastructure/multicloud-journal.md`.
 
 ### Emulator-specific behavior
 

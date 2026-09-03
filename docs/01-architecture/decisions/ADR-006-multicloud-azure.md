@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted (see revision note)
 
 ## Context
 
@@ -28,11 +28,25 @@ The AWS and Azure platforms keep feature parity where the emulator allows:
 | KMS / Secrets Mgr| Key Vault         |
 | IAM              | Entra ID          |
 
-A single nginx gateway on `:4600` fronts both clouds, routing traffic 50/50 by default and allowing pinning via the `X-Cloud` header (`aws` / `azure`).
+## Decision (revised)
+
+The original decision fronted both clouds with a single nginx gateway on `:4600`,
+routing traffic 50/50 by default (pinning via the `X-Cloud` header).
+
+**Revision:** the 50/50 split and the Azure backend were removed. Floci-AZ does
+not emulate `Microsoft.Web/serverfarms` (App Service Plans), so the `azurerm`
+provider cannot create the App Service Plans that Azure Functions require. With
+Azure Functions unprovidable, `tofu apply` of the Azure stack can never complete
+and there is no deployable Azure workload to front. The gateway now routes **all
+traffic to Floci (AWS)**. See `docs/02-infrastructure/multicloud-journal.md` for
+the full investigation.
+
+Azure remains provisioned up to the OpenTofu `plan` level via the `multicloud`
+CI job, keeping the IaC from bit-rotting.
 
 ## Consequences
 
-* The two clouds can be exercised through one public endpoint, enabling cross-cloud routing, failover and comparison.
+* The two clouds can be exercised through one public endpoint, enabling cross-cloud routing, failover and comparison. *(Current revision: the endpoint is AWS-only while the Azure compute layer is blocked.)*
 * Two OpenTofu provider configurations (AWS + Azure) and their environments must be maintained.
 * Emulator gaps on either side must be documented in `docs/02-infrastructure/local-environment.md`.
 * The previous Scaleway DR environment (`scw-dr/`), the Feint skill and ADR-005 are removed.

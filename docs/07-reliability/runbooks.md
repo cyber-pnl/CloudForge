@@ -84,12 +84,18 @@ boto3.client('sqs', region_name='us-east-1', endpoint_url='http://localhost:4566
 
 **When:** primary AWS cloud is lost and workloads must run on Azure.
 
+> **Blocked.** Azure Functions cannot be provisioned (Floci-AZ lacks
+> `Microsoft.Web/serverfarms`), so there is no deployable Azure workload to
+> fail over to. All gateway traffic is AWS-only. See
+> `docs/02-infrastructure/multicloud-journal.md`.
+
 1. Verify Floci is down: `curl -sf http://localhost:4566/_localstack/health` should fail.
-2. Ensure the Azure stack is running: `docker compose -f docker-compose.az.yml up -d`.
-3. Verify Floci-AZ health: `curl -sf http://localhost:4577/_floci-az/health`.
-4. Verify Azure application health: `curl -sf http://localhost:8081/health`.
-5. Confirm the reverse proxy is serving requests on `:8081`.
-6. Document the failover event in a new incident report (`INC-XXX`).
+2. With the gateway AWS-only, the application is unreachable while Floci is down.
+3. Document the outage in a new incident report (`INC-XXX`).
+
+**Recovery:** Once Floci is restored, traffic resumes through the AWS-only
+gateway. Re-enable this runbook after the Azure replica becomes deployable
+(restore the two-backend gateway and re-provision the Azure stack).
 
 **Recovery:** Once the primary cloud is restored, stop the Azure stack and resume
 normal operations on Floci/AWS.

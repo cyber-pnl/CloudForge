@@ -88,9 +88,15 @@ Replication complète de l'infrastructure AWS dans Azure via Floci-AZ, avec un g
 
 ### Phase 6 — CI/CD
 
-17. Ajouter le job CI pour la validation Azure
-18. Ajouter les tests d'intégration Azure
-19. Mettre à jour le pipeline avec les deux clouds
+17. ✅ Ajouter le job CI pour la validation Azure — `multicloud` job
+    (fmt, init, validate, plan sur dev-az)
+18. ⚠️ Tests d'intégration Azure **non implémentés** — le `apply` Azure est
+    bloqué (Floci-AZ n'émule pas `Microsoft.Web/serverfarms`), donc pas de
+    workload à tester. Documenté dans
+    `docs/02-infrastructure/multicloud-journal.md`.
+19. ✅ Pipeline avec les deux clouds — le `multicloud` job valide l'IaC Azure
+    jusqu'au `plan` (pas d'`apply`/`destroy` pour le moment).
+    Le gateway route tout le trafic vers Floci (AWS).
 
 ### Phase 7 — Documentation & Nettoyage
 
