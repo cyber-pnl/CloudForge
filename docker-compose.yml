@@ -11,22 +11,26 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     user: root
 
-  feint:
-    image: ghcr.io/stephrobert/feint:v0.10.0
-    container_name: cloudforge-feint
+  floci-az:
+    image: floci/floci-az:latest
+    container_name: cloudforge-floci-az
     ports:
-      - "4599:4599"
+      - "4577:4577"
+      - "5672:5672"
+      - "5673:5673"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
 
-  proxy:
+  gateway:
     image: nginx:1.29-alpine
-    container_name: cloudforge-proxy
+    container_name: cloudforge-gateway
     ports:
       - "4600:80"
     volumes:
       - ./infrastructure/proxy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - floci
-      - feint
+      - floci-az
 
   exporter:
     build: ./observability/exporter
