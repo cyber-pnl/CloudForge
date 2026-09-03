@@ -20,14 +20,14 @@ Floci
 AWS-compatible infrastructure
 ```
 
-For Scaleway DR:
+For Azure:
 
 ```text
-OpenTofu (scaleway/scaleway provider)
+OpenTofu (azurerm provider)
     ↓
-Feint
+Floci-AZ
     ↓
-Scaleway-compatible infrastructure
+Azure-compatible infrastructure
 ```
 
 Never:

@@ -4,7 +4,7 @@
 
 CloudForge is a production-grade DevOps laboratory.
 
-The project simulates AWS locally using **Floci** and Scaleway using **Feint**, manages infrastructure with **OpenTofu**, validates changes through **GitHub Actions**, and integrates **DevSecOps practices with Trivy**.
+The project simulates AWS locally using **Floci** and Azure using **Floci-AZ**, manages infrastructure with **OpenTofu**, validates changes through **GitHub Actions**, and integrates **DevSecOps practices with Trivy**.
 
 The objective is to build a realistic, maintainable and reproducible cloud platform.
 

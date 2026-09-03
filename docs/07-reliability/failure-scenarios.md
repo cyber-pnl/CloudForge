@@ -6,20 +6,15 @@ The project includes controlled failure scenarios to demonstrate operational mat
 
 ## Scenario 1 — poison job → retries → DLQ → alert
 
-```text
-Poison job (simulate_failure in the canonical envelope)
-     │
-     ▼
-Worker fails 3 deliveries (maxReceiveCount)
-     │
-     ▼
-SQS redrive moves it to the DLQ
-     │
-     ▼
-Exporter metric cloudforge_sqs_messages{kind="dlq"} increases
-     │
-     ▼
-Prometheus alert DeadLetterQueueNotEmpty fires
+```mermaid
+flowchart TD
+    P["Poison job<br/>(simulate_failure in the canonical envelope)"]
+    W["Worker fails 3 deliveries<br/>(maxReceiveCount)"]
+    D[SQS redrive moves it to the DLQ]
+    M["Exporter metric<br/>cloudforge_sqs_messages{kind=dlq} increases"]
+    A["Prometheus alert<br/>DeadLetterQueueNotEmpty fires"]
+
+    P --> W --> D --> M --> A
 ```
 
 Reproduce: `make inject-poison`. Full lifecycle documented in
@@ -27,42 +22,39 @@ Reproduce: `make inject-poison`. Full lifecycle documented in
 
 ## Scenario 2 — emulator outage → health probe → alert
 
-```text
-Emulator container stops
-     │
-     ▼
-cloudforge_api_up drops to 0 within one poll cycle
-     │
-     ▼
-Prometheus alert ApiDown pending, firing after 2m
+```mermaid
+flowchart TD
+    E[Emulator container stops]
+    H[cloudforge_api_up drops to 0<br/>within one poll cycle]
+    P[Prometheus alert ApiDown<br/>pending, firing after 2m]
+
+    E --> H --> P
 ```
 
 Reproduce: `make inject-outage` (stops the emulator for ~150 s and restarts it).
 Full lifecycle documented in [INC-002](incidents/INC-002-emulator-outage.md).
 
-## Scenario 3 — Scaleway DR failover (Floci down → DR site active)
+## Scenario 3 — Azure failover (Floci down → Azure site active)
 
-```text
-Floci container stops (primary cloud lost)
-     │
-     ▼
-Application unreachable on AWS endpoints
-     │
-     ▼
-Scaleway DR site (docker-compose.dr.yml) already running
-     │
-     ▼
-Traffic redirected to DR nginx (:8081)
-     │
-     ▼
-DR stack serves application from Scaleway/Feint infrastructure
+> **Status: blocked — not currently exercisable.** Azure Functions cannot be
+> provisioned (Floci-AZ lacks `Microsoft.Web/serverfarms`), so there is no
+> running Azure workload to fail over to. See
+> [multicloud-journal.md](../02-infrastructure/multicloud-journal.md). The
+> gateway routes all traffic to Floci (AWS), so when Floci is down the
+> application is unreachable.
+
+```mermaid
+flowchart TD
+    F["Floci container stops<br/>(primary cloud lost)"]
+    U["Application unreachable<br/>(all gateway traffic is AWS-only)"]
+
+    F --> U
 ```
 
-This scenario validates the warm-standby disaster-recovery topology defined
-in ADR-005. The DR site runs a containerized version of the application with
-local PostgreSQL, Redis and filesystem-backed storage. See
-[deployment-strategy.md](../04-devops/deployment-strategy.md) Path B for the
-full procedure.
+This warm-standby scenario depends on the Azure replica becoming deployable,
+which is blocked pending Floci-AZ Function App support. When resolved, restore
+the two-backend gateway (50/50 or `X-Cloud` pinning) and re-provision the
+Azure stack before re-enabling this scenario.
 
 ## Incident documentation
 

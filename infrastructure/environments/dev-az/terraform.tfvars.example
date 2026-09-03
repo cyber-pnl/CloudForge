@@ -1,0 +1,7 @@
+subscription_id       = "00000000-0000-0000-0000-000000000001"
+tenant_id             = "00000000-0000-0000-0000-000000000002"
+metadata_host         = "localhost:4577"
+resource_group_name   = "cloudforge-dev-az-rg"
+location              = "eastus"
+name_prefix           = "cloudforge"
+api_token             = "change-me"

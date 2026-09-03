@@ -1,6 +1,8 @@
 # Cloud Services
 
-CloudForge intentionally uses services from two clouds to demonstrate different cloud patterns: **AWS** (serverless primary) and **Scaleway** (IaaS warm-standby).
+CloudForge intentionally uses services from two clouds to demonstrate different cloud patterns: **AWS** (serverless primary) and **Azure** (replicated serverless platform).
+
+The AWS environment is the primary platform. The Azure environment replicates the same serverless application platform so the gateway can route traffic across both clouds (currently routed entirely to AWS pending Floci-AZ Function App support; see `../02-infrastructure/multicloud-journal.md`).
 
 ## AWS Services (Primary — Floci)
 
@@ -20,19 +22,21 @@ CloudForge intentionally uses services from two clouds to demonstrate different 
 | Secrets Manager     | Application secrets          |
 | SSM Parameter Store | Configuration                |
 
-## Scaleway Services (DR Site — Feint)
+## Azure Services (Replica — Floci-AZ)
 
-| Service         | Purpose                                    |
-| --------------- | ------------------------------------------ |
-| VPC             | Isolated network overlay                   |
-| VPC Gateway     | Network routing                            |
-| Instance        | Standby compute (DEV1-S, control-plane)    |
-| Block Storage   | Persistent restore volume (10 GB)          |
-| IAM             | Access control                             |
-| IPAM            | IP address management                      |
-| Load Balancer   | Traffic distribution (emulated, not used)  |
+| AWS Service       | Azure Service      | Purpose (Azure)                                  |
+| ----------------- | ------------------ | ------------------------------------------------ |
+| API Gateway       | API Management     | Public HTTP API                                  |
+| Lambda            | Azure Functions    | Serverless application logic                     |
+| DynamoDB          | Cosmos DB (NoSQL)  | Application data                                 |
+| S3                | Blob Storage       | Object storage                                   |
+| SQS / SNS         | Queue Storage      | Asynchronous processing & notifications          |
+| EventBridge       | Event Grid         | Event routing                                    |
+| CloudWatch        | Azure Monitor      | Logs and metrics                                 |
+| KMS / Secrets Mgr | Key Vault          | Application secrets                              |
+| IAM               | Entra ID           | Access control                                   |
 
-The Scaleway environment (`infrastructure/environments/scw-dr/`) models a warm-standby disaster-recovery site: if the primary AWS cloud is lost, workloads can be re-hosted on Scaleway infrastructure provisioned by the real `scaleway/scaleway` provider against the Feint emulator.
+The Azure environment (`infrastructure/environments/dev-az/`) replicates the AWS platform using the `azurerm` provider against the Floci-AZ emulator, keeping the two clouds at feature parity where the emulators allow it.
 
 ## Local execution
 
@@ -41,9 +45,9 @@ Both clouds run locally through their respective emulators:
 | Emulator | Port | Cloud |
 | -------- | ---- | ----- |
 | Floci    | :4566 | AWS  |
-| Feint    | :4599 | Scaleway |
+| Floci-AZ | :4577 | Azure |
 
-A unified nginx proxy on `:4600` routes requests to either backend (see [Unified Cloud Proxy](../02-infrastructure/local-environment.md#unified-cloud-proxy)).
+A unified nginx gateway on `:4600` routes requests to the backends. It currently routes **all** traffic to Floci (AWS); the 50/50 Azure split is deferred until Floci-AZ can provision Azure Functions (see `../02-infrastructure/multicloud-journal.md`).
 
 See [Local Environment](../02-infrastructure/local-environment.md) for usage details and emulator-specific behavior.
 

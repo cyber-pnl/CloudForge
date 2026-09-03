@@ -13,28 +13,31 @@ The workflow is responsible for validating the complete project.
 The workflow is split into six GitHub Actions **jobs** so every stage is a
 separate box on the run page:
 
-```text
-  Pull Request / Push / Dispatch
-        │
-        ├──────────────┬──────────────┐
-        ▼              ▼              ▼
- ┌─────────────┐ ┌───────────┐ ┌─────────────┐
- │ 1 · Validate│ │ 2 · Unit  │ │ 3 · Security│      (parallel)
- │     IaC     │ │   tests   │ │    gates    │
- └──────┬──────┘ └─────┬─────┘ └──────┬──────┘
-        └──────────────┼──────────────┘
-                       ▼
-             ┌──────────────────┐
-             │ 4 · Integration  │   floci → plan → apply → e2e
-             │   ephemeral dev  │   → destroy (always)
-             └────────┬─────────┘
-                      │
-        ┌─────────────┴──────────────────────┐
-        ▼                                    ▼
-┌──────────────────┐              ┌──────────────────────┐
-│ 5 · Promote to   │              │ 6 · Multi-cloud      │
-│     staging      │ (dispatch)   │  validation (Feint)  │
-└──────────────────┘              └──────────────────────┘
+```mermaid
+flowchart TD
+    Trigger[Pull Request / Push / Dispatch]
+    J1["1 · Validate IaC"]
+    J2["2 · Unit tests"]
+    J3["3 · Security gates"]
+    J4["4 · Integration<br/>ephemeral dev"]
+    J5["5 · Promote to staging"]
+    J6["6 · Multi-cloud validation (Floci-AZ)"]
+
+    Trigger --> J1
+    Trigger --> J2
+    Trigger --> J3
+
+    subgraph parallel ["parallel"]
+        J1
+        J2
+        J3
+    end
+
+    J1 --> J4
+    J2 --> J4
+    J3 --> J4
+    J4 -->|manual dispatch: deploy_staging| J5
+    J4 --> J6
 ```
 
 Jobs 1–3 are deterministic, fast checks and run in parallel for fail-fast
@@ -42,9 +45,12 @@ feedback; the integration and multi-cloud jobs only start once all three pass.
 The promote job appears as "skipped" unless the run was dispatched with
 `deploy_staging`.
 
-The multi-cloud job validates the Scaleway DR environment against the Feint
+The multi-cloud job validates the Azure DR environment against the Floci-AZ
 emulator (job 6), exercising a second cloud provider through the same IaC
-gates (`fmt-check`, `validate`, `plan`, apply, destroy) in the single workflow.
+gates (`fmt-check`, `validate`, `plan`) in the single workflow. It stops at
+**plan**: the Azure `apply` is not run because Azure Functions cannot be
+provisioned (Floci-AZ does not emulate `Microsoft.Web/serverfarms`) — see
+`docs/02-infrastructure/multicloud-journal.md`.
 
 The plan validates the full provider interaction against the emulator; the apply stage deploys the stack so the integration tests can exercise real endpoints (`scripts/integration-tests.sh`). The final destroy only cleans the ephemeral runner environment — its failure never masks a pipeline failure.
 

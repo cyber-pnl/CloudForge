@@ -9,24 +9,32 @@ The infrastructure is divided into reusable modules.
 ```text
 infrastructure/
 │
-├── modules/                  # Reusable OpenTofu modules (AWS)
-│   ├── api-gateway/
-│   ├── cloudwatch/
-│   ├── dynamodb/
-│   ├── eventbridge/
-│   ├── iam/
-│   ├── kms/
-│   ├── lambda/
-│   ├── platform/
-│   ├── s3/
-│   ├── sns/
-│   └── sqs/
+├── modules/                  # Reusable OpenTofu modules
+│   ├── api-gateway/          # AWS API Gateway
+│   ├── cloudwatch/           # AWS CloudWatch alarms
+│   ├── dynamodb/             # AWS DynamoDB tables
+│   ├── eventbridge/          # AWS EventBridge
+│   ├── iam/                  # AWS IAM roles
+│   ├── kms/                  # AWS KMS keys
+│   ├── lambda/               # AWS Lambda functions
+│   ├── platform/             # AWS platform compositor (all sub-modules)
+│   ├── s3/                   # AWS S3 buckets
+│   ├── sns/                  # AWS SNS topics
+│   ├── sqs/                  # AWS SQS queues
+│   ├── az-cosmosdb/          # Azure Cosmos DB (SQL API)
+│   ├── az-storage/           # Azure Storage (Blob + Queue)
+│   ├── az-keyvault/          # Azure Key Vault
+│   ├── az-functions/          # Azure Functions (Service Plan + Function App)
+│   ├── az-apim/               # Azure API Management
+│   ├── az-eventgrid/          # Azure Event Grid (custom topic + subscriptions)
+│   ├── az-monitor/            # Azure Log Analytics workspace
+│   └── az-entra/              # Azure user-assigned managed identity
 │
 ├── environments/
 │   ├── dev/                  # Ephemeral AWS dev
 │   ├── staging/              # Long-lived AWS staging
 │   ├── prod/                 # Long-lived AWS production
-│   └── scw-dr/               # Scaleway DR site (Feint)
+│   └── dev-az/                # Azure dev environment (Floci-AZ)
 │
 └── proxy/                    # Unified cloud endpoint (nginx)
 ```
@@ -48,6 +56,14 @@ Additional modules are added in later phases following the same pattern.
 | `sqs`        | queue | Asynchronous processing; optional CMK encryption. |
 | `sns`        | topic | Notifications fan-out; optional CMK encryption. |
 | `eventbridge`| custom bus, rules with single target each | Domain events routing; patterns are passed as JSON strings. |
+| `az-cosmosdb`| Cosmos DB account (SQL API), SQL database, SQL containers | Application data tables; Azure equivalent of DynamoDB. |
+| `az-storage` | Storage account, blob containers, storage queues | Object storage and async messaging; Azure equivalent of S3 + SQS. |
+| `az-keyvault` | Key Vault, secrets | Application secrets and encryption keys; Azure equivalent of KMS. |
+| `az-functions` | Service plan, Linux Function App | Serverless compute; Azure equivalent of Lambda. |
+| `az-apim` | API Management instance, APIs | REST API gateway; Azure equivalent of API Gateway. |
+| `az-eventgrid` | Custom topic, event subscriptions | Event router; Azure equivalent of SNS/EventBridge. |
+| `az-monitor` | Log Analytics workspace | Log ingestion and query; Azure equivalent of CloudWatch (logs surface). |
+| `az-entra` | User-assigned managed identity | Workload identity for Function Apps; Azure equivalent of IAM roles. |
 
 Each environment consumes the same reusable modules with environment-specific configuration.
 
@@ -57,15 +73,18 @@ Integration glue that binds resources across modules — event source mappings, 
 
 The AWS provider is pinned to `~> 5.0` for Floci compatibility — see [Local Environment](local-environment.md#provider-version-pinning).
 
-```text
-                ┌───────────────┐
-                │    Modules    │
-                └───────┬───────┘
-                        │
-         ┌──────────────┼──────────────┬──────────────┐
-         ▼              ▼              ▼              ▼
-       DEV          STAGING         PROD         SCW-DR
-    (Floci)        (Floci)        (Floci)        (Feint)
+```mermaid
+flowchart TD
+    MOD[Modules]
+    DEV["DEV<br/>(Floci)"]
+    STG["STAGING<br/>(Floci)"]
+    PRD["PROD<br/>(Floci)"]
+    AZZ["DEV-AZ<br/>(Floci-AZ)"]
+
+    MOD --> DEV
+    MOD --> STG
+    MOD --> PRD
+    MOD --> AZZ
 ```
 
 ## Standard workflow
@@ -94,29 +113,66 @@ tofu plan
 
 Used for local development and automated validation.
 
-```text
-Developer → Floci → OpenTofu
+```mermaid
+flowchart LR
+    Dev[Developer] --> FL[Floci] --> OT[OpenTofu]
 ```
 
 ### Staging
 
 Used to validate the complete platform before production.
 
-```text
-GitHub → CI → Floci → OpenTofu
+```mermaid
+flowchart LR
+    GH[GitHub] --> CI[CI] --> FL[Floci] --> OT[OpenTofu]
 ```
 
 ### Production
 
 Represents the desired production architecture. The project is initially executed entirely locally; the infrastructure is intentionally structured so that a future migration to real AWS can be explored without redesigning the entire architecture.
 
-### Scaleway DR
+### Azure dev-az
 
-Warm-standby disaster-recovery site on Scaleway (ADR-005). Provisions VPC, private network, standby instance and block volume through the real `scaleway/scaleway` provider against the Feint emulator.
+Azure development environment (Floci-AZ) replicating the serverless platform locally.
 
 ```text
-CI → Feint → OpenTofu (scaleway/scaleway provider)
+infrastructure/environments/dev-az/
+    main.tf        # azurerm provider → Floci-AZ, resource group, modules
+    variables.tf   # subscription_id, tenant_id, metadata_host, name_prefix
+    outputs.tf     # cosmosdb/ storage/ keyvault/ functions/ apim names and endpoints
 ```
+
+Phase 1 (foundations) provisions:
+- **Cosmos DB** account with SQL database and containers (users, projects)
+- **Storage** account with blob containers (artifacts) and queues (jobs, jobs-dlq)
+- **Key Vault** for application secrets
+
+Phase 2 (compute and gateway) plans:
+- **Azure Functions** service plans and Linux Function Apps (users, projects, worker, dispatcher)
+- **API Management** instance with Users and Projects APIs
+
+> **Emulator blocker:** the Azure Functions service plans (`Microsoft.Web/serverfarms`)
+> are **not emulated** by Floci-AZ, so `tofu apply` of `dev-az` cannot complete.
+> The environment is validated at `plan` level only. See
+> [multicloud-journal.md](multicloud-journal.md).
+
+Phase 3 (messaging and events) provisions:
+- **Event Grid** custom topic with webhook event subscriptions
+
+Phase 4 (observability and security) provisions:
+- **Log Analytics** workspace for function logs (logs surface only)
+- **User-assigned managed identity** attached to the Function Apps
+
+```mermaid
+flowchart LR
+    CI[CI] --> AZ[Floci-AZ] --> OT["OpenTofu (azurerm provider)"]
+```
+
+> **Emulator note:** Floci-AZ Event Grid supports webhook destinations only. Storage Queue, Azure Function, and Service Bus event subscription destinations are not supported; domain/namespace surfaces are out of scope. See [local-environment.md](local-environment.md#event-grid) for details.
+>
+> **Metrics note:** Floci-AZ emulates the Azure Monitor logs surface (Log Analytics ingestion + query) but **not** metrics, alerts, action groups, or autoscale. Metric alarms are documented but not evaluatable — parallel to Floci's CloudWatch limitation.
+
+The `azurerm` provider is configured with `environment = "stack"` and `metadata_host = "localhost:4577"` to discover the cloud via Floci-AZ's HTTPS metadata endpoint. TLS is required — see [local-environment.md](local-environment.md#tls-is-mandatory-for-the-azurerm-provider).
 
 See [deployment-strategy.md](../04-devops/deployment-strategy.md) for the full topology.
 

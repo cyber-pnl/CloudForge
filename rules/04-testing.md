@@ -60,16 +60,16 @@ Run integration tests
 Verify expected AWS behavior
 ```
 
-For Scaleway DR work:
+For Azure work:
 
 ```text
-Start Feint
+Start Floci-AZ
     ↓
-Provision scw-dr environment
+Provision dev-az environment
     ↓
 Run tofu validate / plan / apply
     ↓
-Verify expected Scaleway behavior
+Verify expected Azure behavior
 ```
 
 If a test cannot be executed, explicitly report why.

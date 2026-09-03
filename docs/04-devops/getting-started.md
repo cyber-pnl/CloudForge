@@ -35,17 +35,17 @@ cd cloudforge
 docker compose up -d
 ```
 
-This starts all services: Floci (AWS), Feint (Scaleway), the unified proxy,
+This starts all services: Floci (AWS), Floci-AZ (Azure), the unified gateway,
 the observability stack and the web console.
 
 Verify that both emulators are running:
 
 ```bash
 curl -sf http://localhost:4566/_localstack/health | python3 -m json.tool | head -3   # Floci
-curl -sf http://localhost:4599/_feint/health      | python3 -m json.tool | head -3   # Feint
+curl -sf http://localhost:4577/health             | python3 -m json.tool | head -3   # Floci-AZ
 ```
 
-Test the unified proxy (random routing):
+Test the unified gateway (all traffic routed to Floci / AWS):
 
 ```bash
 curl -sf http://localhost:4600/_localstack/health | head -c 80
@@ -128,7 +128,7 @@ docker compose up -d
 
 | Service | URL | Purpose |
 | ------- | --- | ------- |
-| Unified proxy | http://localhost:4600 | Routes to Floci or Feint (by `X-Region` header or random) |
+| Unified gateway | http://localhost:4600 | Routes traffic to Floci (AWS) |
 | Exporter | http://localhost:9877/metrics | Prometheus-format metrics polled from Floci |
 | Prometheus | http://localhost:9090 | Scrapes the exporter, evaluates alert rules |
 | Grafana | http://localhost:3000 | Provisioned "CloudForge Overview" dashboard (anonymous viewer, admin/admin for editing) |
@@ -147,8 +147,8 @@ Destroy the local infrastructure:
 aws s3 rm s3://cloudforge-dev-artifacts --recursive
 tofu -chdir=infrastructure/environments/dev destroy
 
-# Secondary (Scaleway DR)
-tofu -chdir=infrastructure/environments/scw-dr destroy
+# Secondary (Azure DR)
+tofu -chdir=infrastructure/environments/dev-az destroy
 
 # Stop all services
 docker compose down

@@ -2,7 +2,7 @@
 
 ## When to use
 
-Use this skill when adding or changing AWS or Scaleway services, modifying the event-driven flow, or making a decision that affects the platform design.
+Use this skill when adding or changing AWS or Azure services, modifying the event-driven flow, or making a decision that affects the platform design.
 
 ## Procedure
 
@@ -20,16 +20,16 @@ Use this skill when adding or changing AWS or Scaleway services, modifying the e
    What are its security implications?
    ```
 
-4. For every new Scaleway service, answer (see `rules/01-architecture.md`):
+4. For every new Azure service, answer (see `rules/01-architecture.md`):
 
    ```text
-   Why is this service required on Scaleway?
-   Is it supported by Feint?
-   How will it be tested against Feint?
+   Why is this service required on Azure?
+   Is it supported by Floci-AZ?
+   How will it be tested against Floci-AZ?
    ```
 
 5. If the change is a significant architectural decision, create an ADR in `docs/01-architecture/decisions/` following `ADR-XXX-short-description.md` with sections: Status, Context, Decision, Consequences, Alternatives Considered.
-6. Update `docs/01-architecture/aws-services.md` when a service is added. Update the Scaleway table when adding Scaleway services.
+6. Update `docs/01-architecture/aws-services.md` when a service is added. Update the Azure table when adding Azure services.
 7. Validate with the OpenTofu skill if infrastructure is touched.
 
 ## References

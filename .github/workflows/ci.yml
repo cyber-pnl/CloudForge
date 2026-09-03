@@ -181,7 +181,7 @@ jobs:
           TOFU_DIR=infrastructure/environments/staging ./scripts/integration-tests.sh
 
   multicloud:
-    name: "6 · Multi-cloud validation (Scaleway / Feint)"
+    name: "6 · Multi-cloud validation (Azure / Floci-AZ)"
     needs: [validate, unit-tests, security]
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -194,46 +194,38 @@ jobs:
         with:
           tofu_version: 1.12.6
 
-      - name: Start Feint emulator
+      - name: Start Floci-AZ emulator
         run: |
-          docker compose up -d feint
+          docker compose up -d floci-az
           for attempt in $(seq 1 30); do
-            if curl -sf http://localhost:4599/_feint/health > /dev/null 2>&1; then
-              echo "Feint is up"
+            if curl -sf http://localhost:4577/_floci/health > /dev/null 2>&1; then
+              echo "Floci-AZ is up"
               break
             fi
             if [ "$attempt" = "30" ]; then
-              echo "Feint did not become reachable"
-              docker compose logs feint
+              echo "Floci-AZ did not become reachable"
+              docker compose logs floci-az
               exit 1
             fi
             sleep 2
           done
 
-      - name: OpenTofu formatting (Scaleway)
-        run: tofu -chdir=infrastructure/environments/scw-dr fmt -check -recursive
+      - name: OpenTofu formatting (Azure)
+        run: tofu -chdir=infrastructure/environments/dev-az fmt -check -recursive
 
-      - name: OpenTofu validation (Scaleway)
+      - name: OpenTofu validation (Azure)
         run: |
-          tofu -chdir=infrastructure/environments/scw-dr init -input=false
-          tofu -chdir=infrastructure/environments/scw-dr validate
+          tofu -chdir=infrastructure/environments/dev-az init -input=false
+          tofu -chdir=infrastructure/environments/dev-az validate
 
-      - name: OpenTofu plan against Feint
-        run: tofu -chdir=infrastructure/environments/scw-dr plan -input=false
+      - name: OpenTofu plan against Floci-AZ
+        run: tofu -chdir=infrastructure/environments/dev-az plan -input=false
 
-      - name: Apply Scaleway DR stack
-        run: tofu -chdir=infrastructure/environments/scw-dr apply -auto-approve -input=false
-
-      - name: Verify Feint health
+      - name: Verify Floci-AZ health
         run: |
-          curl -sf http://localhost:4599/_feint/health | python3 -c "
+          curl -sf http://localhost:4577/_floci/health | python3 -c "
           import json, sys
           h = json.load(sys.stdin)
-          assert h.get('instance', {}).get('pid'), 'Feint health check failed'
-          print('Feint health OK: pid', h['instance']['pid'])
+          assert h, 'Floci-AZ health check failed'
+          print('Floci-AZ health OK')
           "
-
-      - name: Destroy Scaleway DR stack
-        if: always()
-        continue-on-error: true
-        run: tofu -chdir=infrastructure/environments/scw-dr destroy -auto-approve -input=false

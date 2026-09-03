@@ -1,14 +1,14 @@
-# Local Environment (Floci + Feint)
+# Local Environment (Floci + Floci-AZ)
 
-Floci provides the local AWS environment: AWS-compatible APIs without a real AWS account. Feint provides the local Scaleway environment alongside it.
+Floci provides the local AWS environment: AWS-compatible APIs without a real AWS account. Floci-AZ provides the local Azure environment alongside it.
 
 ## Endpoint
 
 | Service | Endpoint |
 |---------|----------|
 | Floci (AWS) | `http://localhost:4566` |
-| Feint (Scaleway) | `http://localhost:4599` |
-| Unified proxy | `http://localhost:4600` |
+| Floci-AZ (Azure) | `http://localhost:4577` |
+| Unified gateway | `http://localhost:4600` |
 
 ## Usage
 
@@ -42,25 +42,33 @@ Local credentials are dummy values (`test` / `test`, configured once in `~/.aws/
 
 ## How OpenTofu uses Floci
 
-```text
-OpenTofu
-    │
-    │ AWS API
-    ▼
-Floci :4566
-    │
-    ├── S3
-    ├── Lambda
-    ├── DynamoDB
-    ├── SQS
-    ├── SNS
-    ├── EventBridge
-    └── API Gateway
+```mermaid
+flowchart TD
+    OT[OpenTofu]
+    FL[Floci :4566]
+    S3[S3]
+    LAM[Lambda]
+    DDB[DynamoDB]
+    SQS[SQS]
+    SNS[SNS]
+    EB[EventBridge]
+    AG[API Gateway]
+    OBS["Observability stack (docker compose)"]
+    EX["exporter :9877<br/>polls Floci APIs, serves /metrics,<br/>pushes CloudForge/* metrics"]
+    PR[prometheus :9090<br/>scrapes exporter, evaluates alert rules]
+    GR["grafana :3000<br/>dashboards (provisioned, anonymous viewer access)"]
 
-Observability stack (docker compose)
-    exporter :9877   polls Floci APIs, serves /metrics, pushes CloudForge/* metrics
-    prometheus :9090 scrapes exporter, evaluates alert rules
-    grafana :3000    dashboards (provisioned, anonymous viewer access)
+    OT -->|AWS API| FL
+    FL --> S3
+    FL --> LAM
+    FL --> DDB
+    FL --> SQS
+    FL --> SNS
+    FL --> EB
+    FL --> AG
+    OBS --> EX
+    EX --> PR
+    PR --> GR
 ```
 
 ## Emulator-specific behavior
@@ -127,88 +135,199 @@ Floci does not persist or read back some attributes that the provider writes. Ev
 * The provider block must route `cloudwatch` to Floci via `endpoints {}` like every other service — otherwise calls hit real AWS and fail with `InvalidClientTokenId`.
 * `TagResource` on an alarm returns HTTP 200 with an empty body; AWS SDK Go clients fail deserializing the response even though the operation succeeds server-side (verified in Phase 9).
 
-## Unified Cloud Proxy
+## Unified Cloud Gateway
 
-A lightweight nginx proxy sits in front of both Floci and Feint and provides
-a **single entry point** on `http://localhost:4600`:
+A lightweight nginx gateway sits in front of Floci and provides a **single entry
+point** on `http://localhost:4600`. It currently routes **all** traffic to the
+AWS backend (Floci).
 
-| Mode | Behavior |
-|------|----------|
-| `X-Region: aws` | All requests → Floci (AWS) |
-| `X-Region: scaleway` | All requests → Feint (Scaleway) |
-| No header | Random 50/50 split between the two backends |
-
-The split is deterministic per request (`split_clients` hashing `$request_id`)
-so the same request always lands on the same backend within a burst, but the
-overall distribution converges to 50/50.
+> A previous iteration load-balanced 50/50 between Floci and Floci-AZ. That
+> split and the Azure backend were removed because Azure Functions cannot be
+> provisioned (Floci-AZ does not emulate `Microsoft.Web/serverfarms`), so there
+> is no deployable Azure workload behind the gateway. See
+> `multicloud-journal.md`.
 
 ```bash
-# Explicit routing
-curl -H "X-Region: aws" http://localhost:4600/_localstack/health
-curl -H "X-Region: scaleway" http://localhost:4600/_feint/health
-
-# Random routing
+# All traffic routes to the AWS backend
 curl http://localhost:4600/_localstack/health
 ```
 
 OpenTofu providers point directly to their respective backends (`:4566` /
-`:4599`) for deterministic IaC operations. The proxy is for ad-hoc testing,
+`:4577`) for deterministic IaC operations. The gateway is for ad-hoc testing,
 demonstrations and external consumers that need one URL for both clouds.
 
-## Feint (Scaleway emulator)
+## Floci-AZ (Azure emulator)
 
-[Feint](https://github.com/stephrobert/feint) provides the local Scaleway
-environment alongside Floci. It is a single-binary emulator serving the
-Scaleway API on port `4599`, started by the same `docker compose up` command
+Floci-AZ provides the local Azure environment alongside Floci. It serves the
+Azure API on port `4577`, started by the same `docker compose up` command
 as Floci.
 
 ### Endpoint
 
 ```text
-http://localhost:4599
+http://localhost:4577
 ```
 
 ### Health check
 
 ```bash
-curl -s localhost:4599/_feint/health | python3 -m json.tool
+curl -s localhost:4577/_floci/health | python3 -m json.tool
 ```
 
-### How OpenTofu uses Feint
+### How OpenTofu uses Floci-AZ
 
-```text
-OpenTofu (scaleway/scaleway provider)
-    │
-    │ Scaleway API  (api_url override)
-    ▼
-Feint :4599
-    │
-    ├── Instance (compute)
-    ├── VPC / VPCgw (networking)
-    ├── Block (block storage)
-    └── IAM (access control)
+```mermaid
+flowchart TD
+    OT["OpenTofu<br/>(azurerm provider)"]
+    AZ[Floci-AZ :4577]
+    FN["Azure Functions (compute)"]
+    APIM["API Management (routing)"]
+    CDB["Cosmos DB (data)"]
+    BLOB["Blob Storage (objects)"]
+    QUEUE["Queue Storage (messaging)"]
+    EG["Event Grid (events)"]
+    MON["Azure Monitor (observability)"]
+    KV["Key Vault (secrets & keys)"]
+    ENTRA["Entra ID (identity)"]
+
+    OT -->|"Azure API (HTTPS)"| AZ
+    AZ --> FN
+    AZ --> APIM
+    AZ --> CDB
+    AZ --> BLOB
+    AZ --> QUEUE
+    AZ --> EG
+    AZ --> MON
+    AZ --> KV
+    AZ --> ENTRA
 ```
+
+### TLS is mandatory for the azurerm provider
+
+The `azurerm` provider discovers Azure over HTTPS (`GET https://{host}/metadata/endpoints`).
+Floci-AZ serves plain HTTP by default — the provider fails before any resource request.
+
+`FLOCI_AZ_TLS_ENABLED=true` is set in `docker-compose.yml`. Floci-AZ serves HTTP and
+HTTPS on the same port (`4577`) via a protocol-sniffing proxy. A self-signed certificate
+is generated at startup.
+
+Trust the certificate before running `tofu` against Floci-AZ:
+
+```bash
+curl -sf http://localhost:4577/_floci/tls-cert -o floci-az.crt
+# Linux (requires sudo):
+sudo cp floci-az.crt /usr/local/share/ca-certificates/ && sudo update-ca-certificates
+# OR without sudo (set SSL_CERT_FILE):
+export SSL_CERT_FILE="$PWD/floci-az.crt"
+```
+
+### azurerm provider block (Floci-AZ)
+
+```hcl
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3.0"
+    }
+  }
+}
+
+provider "azurerm" {
+  features {}
+  skip_provider_registration = true
+  use_cli                    = false
+
+  environment   = "stack"
+  metadata_host = "localhost:4577"
+
+  subscription_id = "00000000-0000-0000-0000-000000000001"
+  tenant_id       = "00000000-0000-0000-0000-000000000002"
+  client_id       = "00000000-0000-0000-0000-000000000003"
+  client_secret   = "fake-secret"
+}
+```
+
+`environment = "stack"` tells the provider to use metadata discovery.
+Credentials are never validated by Floci-AZ in dev mode.
+
+> **Note — applicabilité limitée :** l'environnement Azure n'est validé qu'au
+> niveau **plan** (déploiement non fonctionnel). Voir
+> `docs/02-infrastructure/multicloud-journal.md`.
 
 ### Emulator-specific behavior
 
-1. **Control-plane only.** Created servers report API state but never boot
-   (`capabilities.machines: false` unless Incus/OVN is configured). The lab
-   proves reproducible provisioning, not workload execution on Scaleway.
-2. **No Object Storage.** The Scaleway S3-compatible API is not emulated.
-   CloudForge's artifact pipeline therefore stays on AWS/Floci (S3).
-3. **Credentials are never validated.** Feint accepts any signing credentials
-   (`SCWXXXXXXXXXXXXXXXXX` / `11111111-1111-1111-1111-111111111111`) as
-   long as the client can sign requests. They are present only to satisfy
-   client-side signing requirements.
-4. **Volume attachment drift.** The Scaleway provider re-applies the
-   `additional_volume_ids` attribute on every plan when the volume was
-   created in the same apply — the emulator does not persist the attachment
-   state back. This is harmless (idempotent in-place update) and does not
-   affect the destroy path.
+Floci-AZ-specific divergences and workarounds are documented here as they are
+discovered. The same rules as Floci apply:
 
-### Multi-account isolation (verified in Phase 9) — Floci-specific
+1. Check Floci-AZ support before implementing an Azure feature.
+2. Isolate workarounds in a single place.
+3. Do not spread emulator-specific assumptions throughout the application.
+4. Document any emulator-specific behavior in this file.
 
-The access key selects the account (`000000000001` gets its own resources), but only for **control-plane** APIs. The REST API execute plane resolves APIs exclusively in the default account, so an API deployed under another account cannot be invoked over HTTP. Environments therefore share the default account and rely on name prefixes (see ADR-004). `scripts/purge_floci_account.py` removes prefixed resources from a non-default account.
+### Multi-account isolation — Floci-AZ-specific
+
+Floci-AZ mirrors Floci's account isolation model for Azure resource groups and
+subscriptions. Environments share the default account and rely on name prefixes.
+
+### Azure Monitor — Floci-AZ-specific
+
+Floci-AZ emulates Azure Monitor's **logs surface** (Log Analytics) only, not
+metrics. Supported:
+
+- Log Analytics workspaces (`Microsoft.OperationalInsights/workspaces`) with a
+  `customerId` GUID generated and indexed for query resolution.
+- Data Collection Endpoints and Rules (`Microsoft.Insights/dataCollectionEndpoints`,
+  `Microsoft.Insights/dataCollectionRules`).
+- Logs Ingestion API (`POST /dataCollectionRules/{immutableId}/streams/{stream}`).
+- Log query API (`POST /v1/workspaces/{workspaceId}/query`) with a **KQL subset**
+  (`where`/`project`/`take`/`limit` + timespan).
+
+Not emulated (do not rely on these working):
+
+1. **Metrics, metric alerts, action groups, and autoscale are out of scope.**
+   This mirrors Floci's CloudWatch limitation — metric alarms are documented but
+   not evaluated.
+2. **KQL aggregations** (`summarize`, `extend`, `join`, `order by`, `parse`) and
+   scalar functions are not implemented.
+
+### Microsoft Entra ID / Managed Identity — Floci-AZ-specific
+
+Floci-AZ provides an OpenID Connect provider (Entra ID) that mints real RS256 JWTs
+with a discovery document and JWKS, plus a `Microsoft.ManagedIdentity` ARM plane
+for user-assigned identities and an IMDS token endpoint. What applies to
+OpenTofu:
+
+- **`azurerm_user_assigned_identity` is supported** — ARM CRUD with server-generated
+  `principalId`/`clientId` GUIDs that stay stable across updates; identities appear
+  in the resource group's `/resources` listing used by azurerm's pre-delete check.
+- **No app-registration / Graph CRUD via ARM.** The `azuread` Terraform provider
+  cannot create app registrations or groups against Floci-AZ; service principals
+  and OAuth app registration management are out of scope. Workload identity maps to
+  user-assigned managed identities (`az-entra` module).
+- Token enforcement (`validate-tokens`) is opt-in and off by default, so services
+  accept any Bearer token in dev.
+
+### Event Grid — Floci-AZ-specific
+
+Floci-AZ implements Event Grid in-process over the ARM path
+(`Microsoft.EventGrid`) with custom topics, access keys, and webhook event
+subscriptions. Publishing is HTTP-only (data plane at `/{topic}-eventgrid/api/events`)
+in Event Grid or CloudEvents 1.0 schemas; delivery is async with retry and the
+`SubscriptionValidationEvent` handshake.
+
+Verified limitations (do not rely on these working):
+
+1. **Webhook destinations only.** Storage Queue, Azure Function, Service Bus,
+   and Event Hub event subscription destinations are not supported.
+2. **No dead-lettering.** Events that exhaust `maxDeliveryAttempts` are dropped,
+   not written to a dead-letter blob container.
+3. **No Namespace surface.** Domains, partner/system topics, and the MQTT/pull
+   namespace are out of scope.
+4. **Advanced filters are accepted but not evaluated**; `CustomEventSchema` is
+   treated as the Event Grid schema.
+5. Authentication is permissive: the `aeg-sas-key` header is accepted but not
+   validated (dev mode).
 
 ### Provider version pinning
 

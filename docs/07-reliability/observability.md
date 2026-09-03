@@ -12,19 +12,21 @@ The platform exposes, per poll cycle of the exporter:
 
 ## Live architecture
 
-```text
-Floci :4566 (AWS APIs)
-     │
-     ▼
-exporter :9877 ── /metrics (Prometheus text format)
-     │      │
-     │      └── push CloudForge/* gauges to CloudWatch
-     ▼                │
-Prometheus :9090 ◄────┘ (alarms reference pushed metrics)
-     │
-     ├── rules: DeadLetterQueueNotEmpty (evaluated), ApiDown (evaluated)
-     ▼
-Grafana :3000 — "CloudForge Overview" dashboard (provisioned JSON)
+```mermaid
+flowchart TD
+    FL["Floci :4566 (AWS APIs)"]
+    EX[exporter :9877]
+    MT["/metrics (Prometheus text format)"]
+    CW[CloudWatch]
+    PR[Prometheus :9090]
+    GR["Grafana :3000<br/>CloudForge Overview dashboard"]
+
+    FL --> EX
+    EX --> MT
+    MT --> PR
+    EX --> CW
+    CW --> PR
+    PR -->|"rules: DeadLetterQueueNotEmpty (evaluated), ApiDown (evaluated)"| GR
 ```
 
 ## Detection paths
@@ -45,6 +47,7 @@ Grafana :3000 — "CloudForge Overview" dashboard (provisioned JSON)
   trend signal, not an invocation counter.
 * Metric sections go stale independently when the emulator is unreachable; the
   health probe stays fresh because it runs first in every cycle.
-* Feint/Scaleway DR site does not export Prometheus metrics. Observability is
-  limited to journald logs and application-level health checks (`GET /health`
-  on the DR nginx at `:8081`).
+* Floci-AZ does not export Prometheus metrics. Observability for the Azure
+  environment is limited to journald logs, Azure Monitor telemetry and
+  application-level health checks (`GET /health` on the DR reverse proxy at
+  `:8081`).
