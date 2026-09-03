@@ -134,8 +134,8 @@ a **single entry point** on `http://localhost:4600`:
 
 | Mode | Behavior |
 |------|----------|
-| `X-Region: aws` | All requests → Floci (AWS) |
-| `X-Region: azure` | All requests → Floci-AZ (Azure) |
+| `X-Cloud: aws` | All requests → Floci (AWS) |
+| `X-Cloud: azure` | All requests → Floci-AZ (Azure) |
 | No header | Random 50/50 split between the two backends |
 
 The split is deterministic per request (`split_clients` hashing `$request_id`)
@@ -144,8 +144,8 @@ overall distribution converges to 50/50.
 
 ```bash
 # Explicit routing
-curl -H "X-Region: aws" http://localhost:4600/_localstack/health
-curl -H "X-Region: azure" http://localhost:4600/_floci/health
+curl -H "X-Cloud: aws" http://localhost:4600/_localstack/health
+curl -H "X-Cloud: azure" http://localhost:4600/_floci/health
 
 # Random routing
 curl http://localhost:4600/_localstack/health

@@ -86,7 +86,7 @@ Backlog items are tracked here (see `rules/00-project.md`). Each task should hav
 * [x] Azure warm-standby stack provisioned with OpenTofu
 * [x] Multi-cloud CI validation (single workflow constraint kept)
 * [x] Documentation (emulator quirks, Azure extension)
-* [x] Unified cloud gateway (nginx on :4600, X-Region header or random split)
+* [x] Unified cloud gateway (nginx on :4600, X-Cloud header or random split)
 
 ## Phase 11 — Azure Replication
 

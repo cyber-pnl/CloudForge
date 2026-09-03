@@ -128,7 +128,7 @@ docker compose up -d
 
 | Service | URL | Purpose |
 | ------- | --- | ------- |
-| Unified gateway | http://localhost:4600 | Routes to Floci or Floci-AZ (by `X-Region` header or random) |
+| Unified gateway | http://localhost:4600 | Routes to Floci or Floci-AZ (by `X-Cloud` header or random) |
 | Exporter | http://localhost:9877/metrics | Prometheus-format metrics polled from Floci |
 | Prometheus | http://localhost:9090 | Scrapes the exporter, evaluates alert rules |
 | Grafana | http://localhost:3000 | Provisioned "CloudForge Overview" dashboard (anonymous viewer, admin/admin for editing) |

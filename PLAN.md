@@ -78,7 +78,8 @@ Replication complète de l'infrastructure AWS dans Azure via Floci-AZ, avec un g
 
 ### Phase 5 — Gateway Unifié
 
-14. Créer `infrastructure/modules/gateway/`
+14. Configurer le gateway nginx (config + service docker-compose, pas un module
+    OpenTofu : le gateway est un proxy local, pas une ressource cloud)
 15. Implémenter le load balancer nginx 50/50 :
     - `X-Cloud: aws` → Floci (:4566)
     - `X-Cloud: azure` → Floci-AZ (:4577)
