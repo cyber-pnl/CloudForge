@@ -10,7 +10,7 @@ The workflow is responsible for validating the complete project.
 
 ## Jobs
 
-The workflow is split into six GitHub Actions **jobs** so every stage is a
+The workflow is split into five GitHub Actions **jobs** so every stage is a
 separate box on the run page:
 
 ```mermaid
@@ -21,7 +21,6 @@ flowchart TD
     J3["3 · Security gates"]
     J4["4 · Integration<br/>ephemeral dev"]
     J5["5 · Promote to staging"]
-    J6["6 · Multi-cloud validation (Floci-AZ)"]
 
     Trigger --> J1
     Trigger --> J2
@@ -37,20 +36,11 @@ flowchart TD
     J2 --> J4
     J3 --> J4
     J4 -->|manual dispatch: deploy_staging| J5
-    J4 --> J6
 ```
 
 Jobs 1–3 are deterministic, fast checks and run in parallel for fail-fast
-feedback; the integration and multi-cloud jobs only start once all three pass.
-The promote job appears as "skipped" unless the run was dispatched with
-`deploy_staging`.
-
-The multi-cloud job validates the Azure DR environment against the Floci-AZ
-emulator (job 6), exercising a second cloud provider through the same IaC
-gates (`fmt-check`, `validate`, `plan`) in the single workflow. It stops at
-**plan**: the Azure `apply` is not run because Azure Functions cannot be
-provisioned (Floci-AZ does not emulate `Microsoft.Web/serverfarms`) — see
-`docs/02-infrastructure/multicloud-journal.md`.
+feedback; the integration job only starts once all three pass. The promote job
+appears as "skipped" unless the run was dispatched with `deploy_staging`.
 
 The plan validates the full provider interaction against the emulator; the apply stage deploys the stack so the integration tests can exercise real endpoints (`scripts/integration-tests.sh`). The final destroy only cleans the ephemeral runner environment — its failure never masks a pipeline failure.
 

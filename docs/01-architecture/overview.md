@@ -8,7 +8,7 @@ CloudForge is designed around six main objectives:
 
 * Build a realistic **multi-cloud architecture** (AWS + Azure, replicated serverless platform)
 * Manage infrastructure entirely with **OpenTofu** across both clouds
-* Implement a complete **CI pipeline** (single workflow, six jobs)
+* Implement a complete **CI pipeline** (single workflow, five jobs)
 * Integrate **DevSecOps practices with Trivy**
 * Test AWS infrastructure locally using **Floci** and Azure using **Floci-AZ**
 * Provide a **unified cloud gateway** routing traffic (currently AWS-only; see
