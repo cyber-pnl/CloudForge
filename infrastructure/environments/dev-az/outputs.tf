@@ -44,3 +44,33 @@ output "keyvault_uri" {
   description = "URI of the Key Vault."
   value       = module.keyvault.vault_uri
 }
+
+output "users_function_app_name" {
+  description = "Name of the Users Function App."
+  value       = module.users_function.function_app_name
+}
+
+output "projects_function_app_name" {
+  description = "Name of the Projects Function App."
+  value       = module.projects_function.function_app_name
+}
+
+output "worker_function_app_name" {
+  description = "Name of the Worker Function App."
+  value       = module.worker_function.function_app_name
+}
+
+output "dispatcher_function_app_name" {
+  description = "Name of the Dispatcher Function App."
+  value       = module.dispatcher_function.function_app_name
+}
+
+output "apim_name" {
+  description = "Name of the API Management instance."
+  value       = module.apim.apim_name
+}
+
+output "apim_gateway_url" {
+  description = "Gateway URL of the API Management instance."
+  value       = module.apim.gateway_url
+}

@@ -23,7 +23,9 @@ infrastructure/
 │   ├── sqs/                  # AWS SQS queues
 │   ├── az-cosmosdb/          # Azure Cosmos DB (SQL API)
 │   ├── az-storage/           # Azure Storage (Blob + Queue)
-│   └── az-keyvault/          # Azure Key Vault
+│   ├── az-keyvault/          # Azure Key Vault
+│   ├── az-functions/          # Azure Functions (Service Plan + Function App)
+│   └── az-apim/               # Azure API Management
 │
 ├── environments/
 │   ├── dev/                  # Ephemeral AWS dev
@@ -54,6 +56,8 @@ Additional modules are added in later phases following the same pattern.
 | `az-cosmosdb`| Cosmos DB account (SQL API), SQL database, SQL containers | Application data tables; Azure equivalent of DynamoDB. |
 | `az-storage` | Storage account, blob containers, storage queues | Object storage and async messaging; Azure equivalent of S3 + SQS. |
 | `az-keyvault` | Key Vault, secrets | Application secrets and encryption keys; Azure equivalent of KMS. |
+| `az-functions` | Service plan, Linux Function App | Serverless compute; Azure equivalent of Lambda. |
+| `az-apim` | API Management instance, APIs | REST API gateway; Azure equivalent of API Gateway. |
 
 Each environment consumes the same reusable modules with environment-specific configuration.
 
@@ -124,13 +128,17 @@ Azure development environment (Floci-AZ) replicating the serverless platform loc
 infrastructure/environments/dev-az/
     main.tf        # azurerm provider → Floci-AZ, resource group, modules
     variables.tf   # subscription_id, tenant_id, metadata_host, name_prefix
-    outputs.tf     # cosmosdb/ storage/ keyvault names and connection strings
+    outputs.tf     # cosmosdb/ storage/ keyvault/ functions/ apim names and endpoints
 ```
 
 Phase 1 (foundations) provisions:
 - **Cosmos DB** account with SQL database and containers (users, projects)
 - **Storage** account with blob containers (artifacts) and queues (jobs, jobs-dlq)
 - **Key Vault** for application secrets
+
+Phase 2 (compute and gateway) provisions:
+- **Azure Functions** service plans and Linux Function Apps (users, projects, worker, dispatcher)
+- **API Management** instance with Users and Projects APIs
 
 ```text
 CI → Floci-AZ → OpenTofu (azurerm provider)

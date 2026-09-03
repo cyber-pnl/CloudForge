@@ -33,3 +33,10 @@ variable "name_prefix" {
   type        = string
   default     = "cloudforge"
 }
+
+variable "api_token" {
+  description = "API token for service authentication. Dev default; override in real environments."
+  type        = string
+  default     = "devtoken"
+  sensitive   = true
+}
