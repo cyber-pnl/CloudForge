@@ -8,8 +8,8 @@ AUTO_APPROVE ?= false
 
 help:
 	@printf "%-16s %s\n" \
-		up "start local floci + feint environment" \
-		down "stop local floci + feint environment" \
+		up "start local floci + floci-az environment" \
+		down "stop local floci + floci-az environment" \
 		init "initialize opentofu working directory" \
 		fmt "format opentofu files" \
 		fmt-check "check opentofu formatting" \

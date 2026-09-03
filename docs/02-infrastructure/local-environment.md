@@ -1,14 +1,14 @@
-# Local Environment (Floci + Feint)
+# Local Environment (Floci + Floci-AZ)
 
-Floci provides the local AWS environment: AWS-compatible APIs without a real AWS account. Feint provides the local Scaleway environment alongside it.
+Floci provides the local AWS environment: AWS-compatible APIs without a real AWS account. Floci-AZ provides the local Azure environment alongside it.
 
 ## Endpoint
 
 | Service | Endpoint |
 |---------|----------|
 | Floci (AWS) | `http://localhost:4566` |
-| Feint (Scaleway) | `http://localhost:4599` |
-| Unified proxy | `http://localhost:4600` |
+| Floci-AZ (Azure) | `http://localhost:4577` |
+| Unified gateway | `http://localhost:4600` |
 
 ## Usage
 
@@ -127,15 +127,15 @@ Floci does not persist or read back some attributes that the provider writes. Ev
 * The provider block must route `cloudwatch` to Floci via `endpoints {}` like every other service — otherwise calls hit real AWS and fail with `InvalidClientTokenId`.
 * `TagResource` on an alarm returns HTTP 200 with an empty body; AWS SDK Go clients fail deserializing the response even though the operation succeeds server-side (verified in Phase 9).
 
-## Unified Cloud Proxy
+## Unified Cloud Gateway
 
-A lightweight nginx proxy sits in front of both Floci and Feint and provides
+A lightweight nginx gateway sits in front of both Floci and Floci-AZ and provides
 a **single entry point** on `http://localhost:4600`:
 
 | Mode | Behavior |
 |------|----------|
 | `X-Region: aws` | All requests → Floci (AWS) |
-| `X-Region: scaleway` | All requests → Feint (Scaleway) |
+| `X-Region: azure` | All requests → Floci-AZ (Azure) |
 | No header | Random 50/50 split between the two backends |
 
 The split is deterministic per request (`split_clients` hashing `$request_id`)
@@ -145,70 +145,68 @@ overall distribution converges to 50/50.
 ```bash
 # Explicit routing
 curl -H "X-Region: aws" http://localhost:4600/_localstack/health
-curl -H "X-Region: scaleway" http://localhost:4600/_feint/health
+curl -H "X-Region: azure" http://localhost:4600/_flociaz/health
 
 # Random routing
 curl http://localhost:4600/_localstack/health
 ```
 
 OpenTofu providers point directly to their respective backends (`:4566` /
-`:4599`) for deterministic IaC operations. The proxy is for ad-hoc testing,
+`:4577`) for deterministic IaC operations. The gateway is for ad-hoc testing,
 demonstrations and external consumers that need one URL for both clouds.
 
-## Feint (Scaleway emulator)
+## Floci-AZ (Azure emulator)
 
-[Feint](https://github.com/stephrobert/feint) provides the local Scaleway
-environment alongside Floci. It is a single-binary emulator serving the
-Scaleway API on port `4599`, started by the same `docker compose up` command
+Floci-AZ provides the local Azure environment alongside Floci. It serves the
+Azure API on port `4577`, started by the same `docker compose up` command
 as Floci.
 
 ### Endpoint
 
 ```text
-http://localhost:4599
+http://localhost:4577
 ```
 
 ### Health check
 
 ```bash
-curl -s localhost:4599/_feint/health | python3 -m json.tool
+curl -s localhost:4577/_flociaz/health | python3 -m json.tool
 ```
 
-### How OpenTofu uses Feint
+### How OpenTofu uses Floci-AZ
 
 ```text
-OpenTofu (scaleway/scaleway provider)
+OpenTofu (azurerm provider)
     │
-    │ Scaleway API  (api_url override)
+    │ Azure API
     ▼
-Feint :4599
+Floci-AZ :4577
     │
-    ├── Instance (compute)
-    ├── VPC / VPCgw (networking)
-    ├── Block (block storage)
-    └── IAM (access control)
+    ├── Azure Functions (compute)
+    ├── API Management (routing)
+    ├── Cosmos DB (data)
+    ├── Blob Storage (objects)
+    ├── Queue Storage (messaging)
+    ├── Event Grid (events)
+    ├── Azure Monitor (observability)
+    ├── Key Vault (secrets & keys)
+    └── Entra ID (identity)
 ```
 
 ### Emulator-specific behavior
 
-1. **Control-plane only.** Created servers report API state but never boot
-   (`capabilities.machines: false` unless Incus/OVN is configured). The lab
-   proves reproducible provisioning, not workload execution on Scaleway.
-2. **No Object Storage.** The Scaleway S3-compatible API is not emulated.
-   CloudForge's artifact pipeline therefore stays on AWS/Floci (S3).
-3. **Credentials are never validated.** Feint accepts any signing credentials
-   (`SCWXXXXXXXXXXXXXXXXX` / `11111111-1111-1111-1111-111111111111`) as
-   long as the client can sign requests. They are present only to satisfy
-   client-side signing requirements.
-4. **Volume attachment drift.** The Scaleway provider re-applies the
-   `additional_volume_ids` attribute on every plan when the volume was
-   created in the same apply — the emulator does not persist the attachment
-   state back. This is harmless (idempotent in-place update) and does not
-   affect the destroy path.
+Floci-AZ-specific divergences and workarounds are documented here as they are
+discovered. The same rules as Floci apply:
 
-### Multi-account isolation (verified in Phase 9) — Floci-specific
+1. Check Floci-AZ support before implementing an Azure feature.
+2. Isolate workarounds in a single place.
+3. Do not spread emulator-specific assumptions throughout the application.
+4. Document any emulator-specific behavior in this file.
 
-The access key selects the account (`000000000001` gets its own resources), but only for **control-plane** APIs. The REST API execute plane resolves APIs exclusively in the default account, so an API deployed under another account cannot be invoked over HTTP. Environments therefore share the default account and rely on name prefixes (see ADR-004). `scripts/purge_floci_account.py` removes prefixed resources from a non-default account.
+### Multi-account isolation — Floci-AZ-specific
+
+Floci-AZ mirrors Floci's account isolation model for Azure resource groups and
+subscriptions. Environments share the default account and rely on name prefixes.
 
 ### Provider version pinning
 

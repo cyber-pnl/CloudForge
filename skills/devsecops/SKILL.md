@@ -53,7 +53,7 @@ Avoid `"Action": "*"` / `"Resource": "*"` unless explicitly justified and docume
 
 ## Emulator credentials
 
-Feint accepts any signing credentials (`SCWXXXXXXXXXXXXXXXXX` / `11111111-1111-1111-1111-111111111111`). Never use real Scaleway credentials in the local environment. Trivy scans apply to Scaleway provider configuration.
+Floci-AZ accepts any credentials for local development; never use real Azure credentials in the local environment. Trivy scans apply to Azure provider configuration.
 
 ## References
 

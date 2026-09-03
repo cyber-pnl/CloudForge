@@ -62,7 +62,7 @@ If a finding is intentionally accepted:
 
 Secrets must never be committed.
 
-Feint accepts any signing credentials (`SCWXXXXXXXXXXXXXXXXX` / `11111111-1111-1111-1111-111111111111`). Never use real Scaleway credentials in local development — the emulator never validates them.
+Floci-AZ accepts any credentials for local development; real Azure credentials are never used locally. Floci-AZ uses the well-known devstore account name/key and never validates them.
 
 Before committing, check for:
 

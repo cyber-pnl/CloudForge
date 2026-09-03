@@ -46,4 +46,4 @@ Which options were rejected and why?
 | [ADR-002](ADR-002-application-level-auth.md) | Application-level authentication | Accepted |
 | [ADR-003](ADR-003-observability-stack.md) | Observability stack | Accepted |
 | [ADR-004](ADR-004-environment-topology.md) | Environment topology and promotion model | Accepted |
-| [ADR-005](ADR-005-multicloud-scaleway.md) | Multi-cloud topology: Scaleway warm-standby via Feint | Accepted |
+| [ADR-006](ADR-006-multicloud-azure.md) | Multi-cloud topology: Azure replica via Floci-AZ | Accepted |

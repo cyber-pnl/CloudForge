@@ -48,9 +48,9 @@ Do not blindly apply a plan.
 
 Plans and applies for AWS environments run against the local Floci endpoint (`http://localhost:4566`). See the Floci skill for environment setup and emulator-specific behavior.
 
-## Feint note
+## Floci-AZ note
 
-Plans and applies for the Scaleway DR environment (`infrastructure/environments/scw-dr/`) run against the Feint endpoint (`http://localhost:4599`). The `scaleway/scaleway` provider uses an `api_url` override to point to Feint instead of the real Scaleway API. Credentials are Feint's documented public placeholders and are never validated. See the Feint skill for details.
+Plans and applies for the Azure environment (`infrastructure/environments/dev-az/`) run against the Floci-AZ endpoint (`http://localhost:4577`). The `azurerm` provider uses feature flags and a storage endpoint override to point at the local emulator instead of the real Azure API. See the Floci-AZ skill for details.
 
 ## References
 

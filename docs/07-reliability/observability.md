@@ -45,6 +45,7 @@ Grafana :3000 — "CloudForge Overview" dashboard (provisioned JSON)
   trend signal, not an invocation counter.
 * Metric sections go stale independently when the emulator is unreachable; the
   health probe stays fresh because it runs first in every cycle.
-* Feint/Scaleway DR site does not export Prometheus metrics. Observability is
-  limited to journald logs and application-level health checks (`GET /health`
-  on the DR nginx at `:8081`).
+* Floci-AZ does not export Prometheus metrics. Observability for the Azure
+  environment is limited to journald logs, Azure Monitor telemetry and
+  application-level health checks (`GET /health` on the DR reverse proxy at
+  `:8081`).

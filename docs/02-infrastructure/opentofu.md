@@ -26,7 +26,7 @@ infrastructure/
 │   ├── dev/                  # Ephemeral AWS dev
 │   ├── staging/              # Long-lived AWS staging
 │   ├── prod/                 # Long-lived AWS production
-│   └── scw-dr/               # Scaleway DR site (Feint)
+│   └── dev-az/                # Azure dev environment (Floci-AZ)
 │
 └── proxy/                    # Unified cloud endpoint (nginx)
 ```
@@ -64,8 +64,8 @@ The AWS provider is pinned to `~> 5.0` for Floci compatibility — see [Local En
                         │
          ┌──────────────┼──────────────┬──────────────┐
          ▼              ▼              ▼              ▼
-       DEV          STAGING         PROD         SCW-DR
-    (Floci)        (Floci)        (Floci)        (Feint)
+        DEV          STAGING         PROD         DEV-AZ
+     (Floci)        (Floci)        (Floci)       (Floci-AZ)
 ```
 
 ## Standard workflow
@@ -110,12 +110,12 @@ GitHub → CI → Floci → OpenTofu
 
 Represents the desired production architecture. The project is initially executed entirely locally; the infrastructure is intentionally structured so that a future migration to real AWS can be explored without redesigning the entire architecture.
 
-### Scaleway DR
+### Azure dev-az
 
-Warm-standby disaster-recovery site on Scaleway (ADR-005). Provisions VPC, private network, standby instance and block volume through the real `scaleway/scaleway` provider against the Feint emulator.
+Azure development environment (Floci-AZ) replicating the full serverless platform locally. Provisions API Management, Azure Functions, Cosmos DB, Blob Storage, Queue Storage, Event Grid, Azure Monitor, Key Vault and Entra ID through the `azurerm` provider against the Floci-AZ emulator.
 
 ```text
-CI → Feint → OpenTofu (scaleway/scaleway provider)
+CI → Floci-AZ → OpenTofu (azurerm provider)
 ```
 
 See [deployment-strategy.md](../04-devops/deployment-strategy.md) for the full topology.

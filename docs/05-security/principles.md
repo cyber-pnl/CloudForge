@@ -83,7 +83,7 @@ Lambda packages are built before scanning so dependency scanning inspects what a
 
 ## Accepted findings
 
-Security findings that are intentionally accepted must be documented here, with the narrowest possible scope (`rules/03-security.md`). Emulator limitations are verified through CLI probes before acceptance (`skills/floci/SKILL.md`, `skills/feint/SKILL.md`).
+Security findings that are intentionally accepted must be documented here, with the narrowest possible scope (`rules/03-security.md`). Emulator limitations are verified through CLI probes before acceptance (`skills/floci/SKILL.md`, `skills/floci-az/SKILL.md`).
 
 | Finding | Severity | Scope | Reason | Re-evaluation |
 | ------- | -------- | ----- | ------ | ------------- |
@@ -93,5 +93,5 @@ Security findings that are intentionally accepted must be documented here, with 
 | AWS-0004 — Authorization is not enabled | LOW | `/users`, `/projects` methods | Public API is intentional at this stage; the authentication model is a Phase 4 deliverable. | Phase 4 (Application) |
 | AWS-0025 — Table encryption does not use CMK | LOW | `modules/dynamodb` tables | DynamoDB server-side encryption with customer keys is not implemented by Floci (`SSEDescription` absent). | Next Floci upgrade |
 | AWS-0017 — Log group is not encrypted | LOW | Lambda log groups | `logs:AssociateKmsKey` is reported as `UnsupportedOperation` by Floci. | Next Floci upgrade |
-| SCW-0001 — Feint accepts any credentials | LOW | `infrastructure/environments/scw-dr` | Feint never validates signing credentials. Real Scaleway credentials are never used locally. | N/A (emulator design) |
-| SCW-0002 — Volume attachment drift | LOW | `infrastructure/environments/scw-dr` | Feint does not persist attachment state; every plan re-applies `additional_volume_ids`. Idempotent, no destroy impact. | Next Feint upgrade |
+| AZ-0001 — Floci-AZ accepts any credentials | LOW | `infrastructure/environments/dev-az` | Floci-AZ never validates signing credentials. Real Azure credentials are never used locally. | N/A (emulator design) |
+| AZ-0002 — Disk attachment drift | LOW | `infrastructure/environments/dev-az` | Floci-AZ does not persist attachment state; every plan re-applies `data_disk_ids`. Idempotent, no destroy impact. | Next Floci-AZ upgrade |

@@ -12,7 +12,7 @@ Use this skill before claiming any task complete, and when writing or modifying 
 | OpenTofu               | `tofu fmt -check` && `tofu validate` && `tofu plan`          |
 | Any repository change  | `trivy fs .`                                                 |
 | Integration work       | Floci up → provision → integration tests → verify behavior   |
-| Scaleway DR work       | Feint up → tofu validate/plan/apply on scw-dr → verify      |
+| Azure work            | Floci-AZ up → tofu validate/plan/apply on dev-az → verify |
 
 ## Testing levels
 

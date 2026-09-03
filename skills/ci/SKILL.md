@@ -29,7 +29,7 @@ Trivy
     ↓
 Floci
     ↓
-Feint → Scaleway DR validation
+    Floci-AZ → Azure validation
     ↓
 OpenTofu plan
     ↓

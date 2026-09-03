@@ -78,51 +78,54 @@ Backlog items are tracked here (see `rules/00-project.md`). Each task should hav
 * [x] Rollback strategy
 * [x] Disaster recovery scenario
 
-## Phase 10 — Multi-Cloud (Scaleway via Feint)
+## Phase 10 — Multi-Cloud (Azure via Floci-AZ)
 
-* [x] Feint emulator probes (capabilities, routes, provider apply)
+* [x] Floci-AZ emulator probes (capabilities, routes, provider apply)
 * [x] Multi-cloud topology decision (ADR-005)
-* [x] Feint service in the local environment
-* [x] Scaleway warm-standby stack provisioned with OpenTofu
+* [x] Floci-AZ service in the local environment
+* [x] Azure warm-standby stack provisioned with OpenTofu
 * [x] Multi-cloud CI validation (single workflow constraint kept)
-* [x] Documentation (emulator quirks, DR extension)
-* [x] Unified cloud proxy (nginx on :4600, X-Region header or random split)
+* [x] Documentation (emulator quirks, Azure extension)
+* [x] Unified cloud gateway (nginx on :4600, X-Region header or random split)
 
-## Phase 11 — DR Workload Containerization
+## Phase 11 — Azure Replication
 
-> If Floci goes down, the Scaleway DR site must be able to run the actual
-> application — not just provision empty infrastructure. This phase bridges
-> the gap between "IaaS primitives available in Feint" and "managed services
-> used by CloudForge on AWS".
+> Replicate the CloudForge application on Azure using managed-service
+> equivalents instead of IaaS primitives. Each phase maps one layer of the
+> existing AWS stack to its Azure counterpart via Floci-AZ and the azurerm
+> provider.
 
-### Service mapping (AWS managed → Scaleway IaaS)
+### Phase 11.1 — Foundations
 
-| AWS Service | Scaleway equivalent | Implementation |
-|---|---|---|
-| API Gateway | nginx reverse proxy | Container on instance |
-| Lambda (3 functions) | Docker containers | Python images on instance |
-| DynamoDB | PostgreSQL container | Data on block volume |
-| DynamoDB Streams | Redis pub/sub | Container on instance |
-| S3 | Block volume filesystem | Mount at /data |
-| SQS | Redis lists | Container on instance |
-| SNS | Redis pub/sub | Container on instance |
-| EventBridge | Cron worker | Container on instance |
-| CloudWatch | journald + local logs | Instance filesystem |
-| KMS / Secrets Manager | Vault container (deferred) | Container on instance |
-| SSM Parameter Store | Config files | On block volume |
+* [x] Floci-AZ compose environment and `dev-az` configuration
+* [x] azurerm provider setup in OpenTofu
+* [x] Cosmos DB for DynamoDB-equivalent persistence
+* [x] Blob Storage for S3-equivalent object storage
+* [x] Key Vault for secrets management
 
-* [x] Dockerfile for DR application (shared, reuses Lambda handlers)
-* [x] Docker Compose DR stack (nginx + app + PostgreSQL + Redis)
-* [x] Block volume mount and data persistence layout
-* [ ] DR environment OpenTofu config (instance user_data with docker-compose)
-* [x] nginx configuration for API Gateway replacement
+### Phase 11.2 — Compute & API
 
-## Phase 12 — DR Validation and Failover
+* [ ] Azure Functions for Lambda-equivalent compute
+* [ ] API Management for API Gateway-equivalent routing
 
-> Prove that the DR site actually works end-to-end when Floci is down.
+### Phase 11.3 — Messaging
 
-* [ ] Data migration script (DynamoDB → PostgreSQL)
-* [ ] E2E test suite against Scaleway DR stack
-* [ ] DR failover runbook (step-by-step procedure)
-* [ ] DR drill in CI (optional: start Floci down, run against Scaleway)
-* [ ] Documentation (DR architecture, service mapping, failover procedure)
+* [ ] Queue Storage for SQS-equivalent queues
+* [ ] Event Grid for EventBridge-equivalent event routing
+
+### Phase 11.4 — Observability & Security
+
+* [ ] Azure Monitor and Log Analytics for CloudWatch-equivalent observability
+* [ ] Entra ID for IAM-equivalent access control
+
+### Phase 11.5 — Gateway
+
+* [ ] Unified cloud gateway serving 50/50 AWS/Azure traffic split
+
+### Phase 11.6 — CI/CD
+
+* [ ] CI pipeline extended with Azure environment validation
+
+### Phase 11.7 — Documentation & Cleanup
+
+* [ ] ADR-006: Azure managed-service replication strategy

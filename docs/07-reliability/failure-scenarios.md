@@ -40,7 +40,7 @@ Prometheus alert ApiDown pending, firing after 2m
 Reproduce: `make inject-outage` (stops the emulator for ~150 s and restarts it).
 Full lifecycle documented in [INC-002](incidents/INC-002-emulator-outage.md).
 
-## Scenario 3 — Scaleway DR failover (Floci down → DR site active)
+## Scenario 3 — Azure failover (Floci down → Azure site active)
 
 ```text
 Floci container stops (primary cloud lost)
@@ -49,17 +49,17 @@ Floci container stops (primary cloud lost)
 Application unreachable on AWS endpoints
      │
      ▼
-Scaleway DR site (docker-compose.dr.yml) already running
+Azure stack (docker-compose.az.yml) already running
      │
      ▼
-Traffic redirected to DR nginx (:8081)
+Traffic redirected to reverse proxy (:8081)
      │
      ▼
-DR stack serves application from Scaleway/Feint infrastructure
+Azure stack serves application from Floci-AZ infrastructure
 ```
 
 This scenario validates the warm-standby disaster-recovery topology defined
-in ADR-005. The DR site runs a containerized version of the application with
+in ADR-005. The Azure site runs a containerized version of the application with
 local PostgreSQL, Redis and filesystem-backed storage. See
 [deployment-strategy.md](../04-devops/deployment-strategy.md) Path B for the
 full procedure.

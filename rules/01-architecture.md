@@ -99,22 +99,22 @@ Avoid adding AWS services simply to increase the number of services in the proje
 
 Architectural complexity must have a reason.
 
-## Scaleway Architecture
+## Azure Architecture
 
-Every Scaleway service must have a clear purpose and be supported by the Feint emulator.
+Every Azure service must have a clear purpose and be supported by the Floci-AZ emulator.
 
-Before adding a new Scaleway service, answer:
+Before adding a new Azure service, answer:
 
 ```text
-Why is this service required on Scaleway (vs. AWS)?
+Why is this service required on Azure (vs. AWS)?
 
-Is it supported by Feint?
+Is it supported by Floci-AZ?
 
 What responsibility does it have?
 
-How will it be tested against Feint?
+How will it be tested against Floci-AZ?
 
 What are its security implications?
 ```
 
-Scaleway services are limited to IaaS primitives available in Feint. Managed-service equivalents (e.g., managed databases) do not exist locally. Document any gap in `docs/02-infrastructure/local-environment.md`.
+Azure services replicate the AWS platform on a second cloud. The two clouds are kept in feature parity where the emulators allow it. Document any gap in `docs/02-infrastructure/local-environment.md`.

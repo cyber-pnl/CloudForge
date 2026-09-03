@@ -12,7 +12,7 @@ docs/
 │   └── decisions/            Architecture Decision Records (ADR)
 ├── 02-infrastructure/        Infrastructure as Code
 │   ├── opentofu.md           Modules, environments, workflow
-│   └── local-environment.md  Floci + Feint usage and emulator notes
+│   └── local-environment.md  Floci + Floci-AZ usage and emulator notes
 ├── 04-devops/
 │   ├── ci.md                 CI pipeline stages and principles
 │   ├── deployment-strategy.md Environments, promotion, rollback and DR

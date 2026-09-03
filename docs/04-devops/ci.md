@@ -33,7 +33,7 @@ separate box on the run page:
         ▼                                    ▼
 ┌──────────────────┐              ┌──────────────────────┐
 │ 5 · Promote to   │              │ 6 · Multi-cloud      │
-│     staging      │ (dispatch)   │  validation (Feint)  │
+│     staging      │ (dispatch)   │  validation (Floci-AZ) │
 └──────────────────┘              └──────────────────────┘
 ```
 
@@ -42,7 +42,7 @@ feedback; the integration and multi-cloud jobs only start once all three pass.
 The promote job appears as "skipped" unless the run was dispatched with
 `deploy_staging`.
 
-The multi-cloud job validates the Scaleway DR environment against the Feint
+The multi-cloud job validates the Azure DR environment against the Floci-AZ
 emulator (job 6), exercising a second cloud provider through the same IaC
 gates (`fmt-check`, `validate`, `plan`, apply, destroy) in the single workflow.
 
