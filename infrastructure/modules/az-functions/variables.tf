@@ -49,6 +49,12 @@ variable "app_settings" {
   default     = {}
 }
 
+variable "identity_ids" {
+  description = "List of user-assigned managed identity resource IDs to attach."
+  type        = list(string)
+  default     = []
+}
+
 variable "tags" {
   description = "Additional tags applied to all resources."
   type        = map(string)

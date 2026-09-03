@@ -25,6 +25,14 @@ resource "azurerm_linux_function_app" "this" {
 
   functions_extension_version = var.functions_extension_version
 
+  dynamic "identity" {
+    for_each = length(var.identity_ids) > 0 ? [1] : []
+    content {
+      type         = "UserAssigned"
+      identity_ids = var.identity_ids
+    }
+  }
+
   site_config {
     application_stack {
       python_version = var.runtime_version
