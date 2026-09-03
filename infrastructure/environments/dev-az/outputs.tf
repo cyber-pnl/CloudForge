@@ -84,3 +84,18 @@ output "eventgrid_topic_endpoint" {
   description = "Endpoint to publish events to (data plane)."
   value       = module.events.topic_endpoint
 }
+
+output "log_analytics_workspace_name" {
+  description = "Name of the Log Analytics workspace."
+  value       = module.monitor.workspace_name
+}
+
+output "functions_identity_name" {
+  description = "Name of the user-assigned managed identity."
+  value       = module.functions_identity.identity_name
+}
+
+output "functions_identity_principal_id" {
+  description = "Principal ID of the managed identity."
+  value       = module.functions_identity.principal_id
+}

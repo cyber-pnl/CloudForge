@@ -257,6 +257,44 @@ discovered. The same rules as Floci apply:
 Floci-AZ mirrors Floci's account isolation model for Azure resource groups and
 subscriptions. Environments share the default account and rely on name prefixes.
 
+### Azure Monitor — Floci-AZ-specific
+
+Floci-AZ emulates Azure Monitor's **logs surface** (Log Analytics) only, not
+metrics. Supported:
+
+- Log Analytics workspaces (`Microsoft.OperationalInsights/workspaces`) with a
+  `customerId` GUID generated and indexed for query resolution.
+- Data Collection Endpoints and Rules (`Microsoft.Insights/dataCollectionEndpoints`,
+  `Microsoft.Insights/dataCollectionRules`).
+- Logs Ingestion API (`POST /dataCollectionRules/{immutableId}/streams/{stream}`).
+- Log query API (`POST /v1/workspaces/{workspaceId}/query`) with a **KQL subset**
+  (`where`/`project`/`take`/`limit` + timespan).
+
+Not emulated (do not rely on these working):
+
+1. **Metrics, metric alerts, action groups, and autoscale are out of scope.**
+   This mirrors Floci's CloudWatch limitation — metric alarms are documented but
+   not evaluated.
+2. **KQL aggregations** (`summarize`, `extend`, `join`, `order by`, `parse`) and
+   scalar functions are not implemented.
+
+### Microsoft Entra ID / Managed Identity — Floci-AZ-specific
+
+Floci-AZ provides an OpenID Connect provider (Entra ID) that mints real RS256 JWTs
+with a discovery document and JWKS, plus a `Microsoft.ManagedIdentity` ARM plane
+for user-assigned identities and an IMDS token endpoint. What applies to
+OpenTofu:
+
+- **`azurerm_user_assigned_identity` is supported** — ARM CRUD with server-generated
+  `principalId`/`clientId` GUIDs that stay stable across updates; identities appear
+  in the resource group's `/resources` listing used by azurerm's pre-delete check.
+- **No app-registration / Graph CRUD via ARM.** The `azuread` Terraform provider
+  cannot create app registrations or groups against Floci-AZ; service principals
+  and OAuth app registration management are out of scope. Workload identity maps to
+  user-assigned managed identities (`az-entra` module).
+- Token enforcement (`validate-tokens`) is opt-in and off by default, so services
+  accept any Bearer token in dev.
+
 ### Event Grid — Floci-AZ-specific
 
 Floci-AZ implements Event Grid in-process over the ARM path

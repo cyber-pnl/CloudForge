@@ -98,11 +98,13 @@ module "users_function" {
   location                   = azurerm_resource_group.main.location
   storage_account_name       = module.storage.storage_account_name
   storage_account_access_key = module.storage.primary_access_key
+  identity_ids               = [module.functions_identity.identity_id]
 
   app_settings = {
     SERVICE_NAME = "users"
     TABLE_NAME   = module.cosmosdb.account_name
     API_TOKEN    = var.api_token
+    WORKSPACE_ID = module.monitor.workspace_customer_id
   }
 
   tags = local.common_tags
@@ -116,6 +118,7 @@ module "projects_function" {
   location                   = azurerm_resource_group.main.location
   storage_account_name       = module.storage.storage_account_name
   storage_account_access_key = module.storage.primary_access_key
+  identity_ids               = [module.functions_identity.identity_id]
 
   app_settings = {
     SERVICE_NAME     = "projects"
@@ -123,6 +126,7 @@ module "projects_function" {
     USERS_TABLE_NAME = module.cosmosdb.account_name
     ARTIFACT_BUCKET  = module.storage.storage_account_name
     API_TOKEN        = var.api_token
+    WORKSPACE_ID     = module.monitor.workspace_customer_id
   }
 
   tags = local.common_tags
@@ -136,10 +140,12 @@ module "worker_function" {
   location                   = azurerm_resource_group.main.location
   storage_account_name       = module.storage.storage_account_name
   storage_account_access_key = module.storage.primary_access_key
+  identity_ids               = [module.functions_identity.identity_id]
 
   app_settings = {
     ARTIFACT_BUCKET = module.storage.storage_account_name
     ARTIFACT_PREFIX = "artifacts/"
+    WORKSPACE_ID    = module.monitor.workspace_customer_id
   }
 
   tags = local.common_tags
@@ -153,10 +159,12 @@ module "dispatcher_function" {
   location                   = azurerm_resource_group.main.location
   storage_account_name       = module.storage.storage_account_name
   storage_account_access_key = module.storage.primary_access_key
+  identity_ids               = [module.functions_identity.identity_id]
 
   app_settings = {
     TABLE_NAME     = module.cosmosdb.account_name
     EVENT_BUS_NAME = module.events.topic_name
+    WORKSPACE_ID   = module.monitor.workspace_customer_id
   }
 
   tags = local.common_tags
@@ -183,6 +191,27 @@ module "apim" {
       description  = "CRUD operations for projects"
     }
   }
+
+  tags = local.common_tags
+}
+
+module "monitor" {
+  source = "../../modules/az-monitor"
+
+  workspace_name      = "${var.name_prefix}-logs"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  retention_in_days   = 30
+
+  tags = local.common_tags
+}
+
+module "functions_identity" {
+  source = "../../modules/az-entra"
+
+  identity_name       = "${var.name_prefix}-functions-identity"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
 
   tags = local.common_tags
 }

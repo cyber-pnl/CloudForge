@@ -26,7 +26,9 @@ infrastructure/
 │   ├── az-keyvault/          # Azure Key Vault
 │   ├── az-functions/          # Azure Functions (Service Plan + Function App)
 │   ├── az-apim/               # Azure API Management
-│   └── az-eventgrid/          # Azure Event Grid (custom topic + subscriptions)
+│   ├── az-eventgrid/          # Azure Event Grid (custom topic + subscriptions)
+│   ├── az-monitor/            # Azure Log Analytics workspace
+│   └── az-entra/              # Azure user-assigned managed identity
 │
 ├── environments/
 │   ├── dev/                  # Ephemeral AWS dev
@@ -60,6 +62,8 @@ Additional modules are added in later phases following the same pattern.
 | `az-functions` | Service plan, Linux Function App | Serverless compute; Azure equivalent of Lambda. |
 | `az-apim` | API Management instance, APIs | REST API gateway; Azure equivalent of API Gateway. |
 | `az-eventgrid` | Custom topic, event subscriptions | Event router; Azure equivalent of SNS/EventBridge. |
+| `az-monitor` | Log Analytics workspace | Log ingestion and query; Azure equivalent of CloudWatch (logs surface). |
+| `az-entra` | User-assigned managed identity | Workload identity for Function Apps; Azure equivalent of IAM roles. |
 
 Each environment consumes the same reusable modules with environment-specific configuration.
 
@@ -145,11 +149,17 @@ Phase 2 (compute and gateway) provisions:
 Phase 3 (messaging and events) provisions:
 - **Event Grid** custom topic with webhook event subscriptions
 
+Phase 4 (observability and security) provisions:
+- **Log Analytics** workspace for function logs (logs surface only)
+- **User-assigned managed identity** attached to the Function Apps
+
 ```text
 CI → Floci-AZ → OpenTofu (azurerm provider)
 ```
 
 > **Emulator note:** Floci-AZ Event Grid supports webhook destinations only. Storage Queue, Azure Function, and Service Bus event subscription destinations are not supported; domain/namespace surfaces are out of scope. See [local-environment.md](local-environment.md#event-grid) for details.
+>
+> **Metrics note:** Floci-AZ emulates the Azure Monitor logs surface (Log Analytics ingestion + query) but **not** metrics, alerts, action groups, or autoscale. Metric alarms are documented but not evaluatable — parallel to Floci's CloudWatch limitation.
 
 The `azurerm` provider is configured with `environment = "stack"` and `metadata_host = "localhost:4577"` to discover the cloud via Floci-AZ's HTTPS metadata endpoint. TLS is required — see [local-environment.md](local-environment.md#tls-is-mandatory-for-the-azurerm-provider).
 
