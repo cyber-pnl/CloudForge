@@ -58,22 +58,24 @@ The application logic lives in `lambdas/` (handlers plus shared `common/` module
 ## Architecture
 
 ```mermaid
-flowchart TD
+flowchart LR
     Dev[Developer]
+
+    GW["Unified Gateway :4600<br/><b>nginx — 1ère API Gateway</b><br/>routeur d'entrée : envoie la donnée<br/>vers AWS ou Azure"]
+
     AMZ["Floci :4566<br/>(AWS)"]
     AZZ["Floci-AZ :4577<br/>(Azure)"]
     AWS[<b>AWS Cloud</b> — Serverless<br/>API Gateway<br/>Lambda<br/>DynamoDB<br/>S3<br/>SQS / SNS<br/>EventBridge<br/>CloudWatch<br/>KMS<br/>IAM]
     AZU[<b>Azure Cloud</b> — Serverless<br/>API Management<br/>Functions<br/>Cosmos DB<br/>Blob Storage<br/>Queue / Event Grid<br/>Azure Monitor<br/>Key Vault<br/>Entra ID]
-    GW["Unified Gateway :4600<br/>(AWS)"]
     OBS[Observability<br/>Prometheus · Grafana]
 
-    Dev --> AMZ
-    Dev --> AZZ
+    Dev -->|"envoie la donnée"| GW
+    GW -->|"route vers AWS"| AMZ
+    GW -.->|"route vers Azure (retiré)"| AZZ
     AMZ --> AWS
     AZZ --> AZU
-    AWS --> GW
-    AZU --> GW
-    GW --> OBS
+    AWS --> OBS
+    AZU --> OBS
 ```
 
 **Cloud A**: AWS (Floci) — serverless application platform.
