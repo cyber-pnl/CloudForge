@@ -1,58 +1,43 @@
-resource "azurerm_service_plan" "this" {
-  name                = "${var.function_app_name}-plan"
-  resource_group_name = var.resource_group_name
-  location            = var.location
-  os_type             = "Linux"
-  sku_name            = "Y1"
-
-  tags = merge(
-    {
-      Name      = "${var.function_app_name}-plan"
-      ManagedBy = "opentofu"
-    },
-    var.tags,
-  )
-}
-
-resource "azurerm_linux_function_app" "this" {
-  name                = var.function_app_name
-  resource_group_name = var.resource_group_name
-  location            = var.location
-  service_plan_id     = azurerm_service_plan.this.id
-
-  storage_account_name       = var.storage_account_name
-  storage_account_access_key = var.storage_account_access_key
-
-  https_only = true
-
-  functions_extension_version = var.functions_extension_version
-
-  dynamic "identity" {
-    for_each = length(var.identity_ids) > 0 ? [1] : []
-    content {
-      type         = "UserAssigned"
-      identity_ids = var.identity_ids
-    }
-  }
-
-  site_config {
-    application_stack {
-      python_version = var.runtime_version
-    }
-  }
-
-  app_settings = merge(
-    {
-      FUNCTIONS_WORKER_RUNTIME = var.runtime
-    },
+locals {
+  # Application settings injected as the Function App's environment variables.
+  all_settings = merge(
     var.app_settings,
   )
 
-  tags = merge(
-    {
-      Name      = var.function_app_name
-      ManagedBy = "opentofu"
-    },
-    var.tags,
-  )
+  # The package directory is the module-bundled one unless the caller overrides it.
+  package_dir = var.package_dir == "" ? abspath("${path.module}/package") : abspath(var.package_dir)
+}
+
+# The Floci-AZ emulator does not emulate the Azure App Service Plan
+# (Microsoft.Web/serverfarms returns 404), so the azurerm provider cannot
+# create Function Apps. Instead, this module provisions the Function App and
+# deploys a single HTTP-triggered function through Floci-AZ's native Functions
+# management API (see scripts/azure-functions-deploy.sh and
+# docs/02-infrastructure/multicloud-journal.md). This is an emulator-only path
+# and is NOT portable to a real Azure App Service deployment.
+resource "null_resource" "deploy" {
+  triggers = {
+    function_app_name   = var.function_app_name
+    function_name       = var.function_name
+    endpoint            = var.endpoint
+    account_name        = var.account_name
+    runtime_version     = var.runtime_version
+    app_settings        = jsonencode(local.all_settings)
+    package_dir_abspath = local.package_dir
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      set -euo pipefail
+      export AZ_FUNCTIONS_ENDPOINT="${var.endpoint}"
+      export AZ_FUNCTIONS_ACCOUNT="${var.account_name}"
+      export AZ_FUNCTIONS_APP="${var.function_app_name}"
+      export AZ_FUNCTIONS_FUNC="${var.function_name}"
+      export AZ_FUNCTIONS_RUNTIME="python"
+      export AZ_FUNCTIONS_RUNTIME_VERSION="${var.runtime_version}"
+      export AZ_FUNCTIONS_PACKAGE_DIR="${local.package_dir}"
+      export AZ_APP_SETTINGS='${jsonencode(local.all_settings)}'
+      "${path.module}/../../../scripts/azure-functions-deploy.sh"
+    EOT
+  }
 }

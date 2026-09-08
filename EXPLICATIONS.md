@@ -367,12 +367,15 @@ sudo cp floci-az.crt /usr/local/share/ca-certificates/ && sudo update-ca-certifi
 | Event Grid (webhooks) | ✅ partiel |
 | Azure Monitor (logs uniquement) | ✅ partiel |
 | Entra ID (identités managées) | ✅ |
-| **Azure Functions** (`Microsoft.Web/serverfarms`) | ❌ **Non émulé** |
+| **Azure Functions** | ✅ via **API native Floci-AZ** (Python v2) |
 
-> **Blocage critique** : le provider `azurerm` exige un App Service Plan
-> (`Microsoft.Web/serverfarms`) avant de créer une Function App. Floci-AZ
-> retourne 404 sur cette ressource. Aucun workload Azure n'est donc
-> déployable. L'environnement Azure n'est validé qu'au niveau `plan`.
+> **Nuance** : le provider `azurerm` ne peut pas créer de Function App car
+> Floci-AZ ne gère pas `Microsoft.Web/serverfarms` (404). Les Functions sont
+> donc provisionnées via l'**API native de l'émulateur** (`null_resource` +
+> `local-exec` → `scripts/azure-functions-deploy.sh`). Seul le runtime **Python
+> v2** fonctionne. Ce chemin est **spécifique à l'émulateur**, pas portable vers
+> un vrai Azure. Le reste de l'environnement Azure n'est validé qu'au niveau
+> `plan`. Voir `ADR-007`.
 
 ---
 
@@ -390,8 +393,8 @@ sudo cp floci-az.crt /usr/local/share/ca-certificates/ && sudo update-ca-certifi
 | API Management | ✅ | ✅ |
 | Event Grid | ✅ webhooks uniquement | ✅ complet |
 | Azure Monitor | ✅ logs seulement | ✅ logs + métriques |
-| Azure Functions | ❌ plan non émulé | ✅ |
-| App Service Plan | ❌ 404 | ✅ |
+| Azure Functions | ✅ via API native (Python v2) | ✅ |
+| App Service Plan | ❌ 404 (contourné par l'API native) | ✅ |
 | Entra ID (identités) | ✅ managées seulement | ✅ complet |
 | State | Plan uniquement | Apply + tests |
 
@@ -532,4 +535,5 @@ des deux côtés — il suffit de changer les endpoints et d'activer les flags
 dans ce fichier et dans `docs/02-infrastructure/local-environment.md`.
 
 Le même principe s'applique à Azure avec Floci-AZ, bien que l'émulation soit
-moins complète (pas d'Azure Functions deployable).
+moins complète. Les Azure Functions ne sont déployables que via l'API native de
+l'émulateur (Python v2), et non via le provider `azurerm`.
