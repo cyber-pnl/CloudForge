@@ -142,9 +142,11 @@ point** on `http://localhost:4600`. It currently routes **all** traffic to the
 AWS backend (Floci).
 
 > A previous iteration load-balanced 50/50 between Floci and Floci-AZ. That
-> split and the Azure backend were removed because Azure Functions cannot be
-> provisioned (Floci-AZ does not emulate `Microsoft.Web/serverfarms`), so there
-> is no deployable Azure workload behind the gateway. See
+> split and the Azure backend were removed because the Azure stack could not
+> fully `apply` (azure Functions were unprovidable via `azurerm`; beyond that,
+> other azurerm data-plane routing remains blocked). A deployable Azure workload
+> now exists via Floci-AZ's native Functions API (see ADR-007), but the split
+> stays AWS-only until the Azure stack can `apply` cleanly. See
 > `multicloud-journal.md`.
 
 ```bash
@@ -179,8 +181,9 @@ curl -s localhost:4577/_floci/health | python3 -m json.tool
 ```mermaid
 flowchart TD
     OT["OpenTofu<br/>(azurerm provider)"]
+    SC["scripts/azure-functions-deploy.sh<br/>(null_resource + local-exec)"]
     AZ[Floci-AZ :4577]
-    FN["Azure Functions (compute)"]
+    FN["Azure Functions (compute) — native API only"]
     APIM["API Management (routing)"]
     CDB["Cosmos DB (data)"]
     BLOB["Blob Storage (objects)"]
@@ -191,6 +194,8 @@ flowchart TD
     ENTRA["Entra ID (identity)"]
 
     OT -->|"Azure API (HTTPS)"| AZ
+    OT -->|"local-exec"| SC
+    SC -->|"native Functions API (HTTPS)"| AZ
     AZ --> FN
     AZ --> APIM
     AZ --> CDB
@@ -328,6 +333,27 @@ Verified limitations (do not rely on these working):
    treated as the Event Grid schema.
 5. Authentication is permissive: the `aeg-sas-key` header is accepted but not
    validated (dev mode).
+
+### Azure Functions — Floci-AZ-specific
+
+The `azurerm` provider **cannot** create Function Apps because Floci-AZ does not
+emulate the App Service Plan (`Microsoft.Web/serverfarms` → 404) that the
+provider requires first. Instead, the `az-functions` module provisions Function
+Apps through Floci-AZ's **native** Functions management API via a
+`null_resource` + `local-exec` (`scripts/azure-functions-deploy.sh`), which is
+**emulator-only and not portable** to real Azure. See `ADR-007`.
+
+Understood surface:
+
+- Admin API (HTTPS on `:4577`, `-k` for the self-signed cert):
+  `PUT /{account}-functions/admin/apps/{app}` and
+  `PUT /{account}-functions/admin/apps/{app}/functions/{func}`.
+- Invocation: `{endpoint}/{account}-functions/api/{app}/{func}` → `200`.
+- Only the **Python v2** model is supported (`function_app.py` at the ZIP root,
+  route equal to the function name). Classic Node/Java/.NET layouts yield
+  "0 functions found" (`404`) and are rejected by the script.
+- The emulator spawns a real Azure Functions runtime container per app; deleting
+  the app should also stop its container.
 
 ### Provider version pinning
 

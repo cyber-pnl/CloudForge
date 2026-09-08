@@ -47,3 +47,4 @@ Which options were rejected and why?
 | [ADR-003](ADR-003-observability-stack.md) | Observability stack | Accepted |
 | [ADR-004](ADR-004-environment-topology.md) | Environment topology and promotion model | Accepted |
 | [ADR-006](ADR-006-multicloud-azure.md) | Multi-cloud topology: Azure replica via Floci-AZ | Accepted |
+| [ADR-007](ADR-007-az-functions-via-floci-az-native-api.md) | Azure Functions via Floci-AZ native API (emulator-only) | Accepted |

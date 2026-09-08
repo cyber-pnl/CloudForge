@@ -1,58 +1,41 @@
 variable "function_app_name" {
-  description = "Name of the Azure Function App."
+  description = "Name of the Azure Function App (must be unique across the Floci-AZ account)."
   type        = string
 }
 
-variable "resource_group_name" {
-  description = "Name of the Azure resource group."
+variable "function_name" {
+  description = "Name of the single HTTP-triggered function deployed into the app. It also becomes the HTTP route: /api/{app}/{function}."
   type        = string
 }
 
-variable "location" {
-  description = "Azure region for the Function App."
+variable "endpoint" {
+  description = "Floci-AZ base URL for the Functions management API (HTTPS, so invoke/webhook URLs satisfy consumers that require https, e.g. Event Grid)."
   type        = string
-  default     = "eastus"
+  default     = "https://localhost:4577"
 }
 
-variable "storage_account_name" {
-  description = "Name of the storage account used for function state."
+variable "account_name" {
+  description = "Floci-AZ storage account namespace used to scope the Functions API."
   type        = string
-}
-
-variable "storage_account_access_key" {
-  description = "Access key of the storage account."
-  type        = string
-  sensitive   = true
-}
-
-variable "runtime" {
-  description = "Azure Functions runtime stack."
-  type        = string
-  default     = "python"
+  default     = "devstoreaccount1"
 }
 
 variable "runtime_version" {
-  description = "Python runtime version for the Function App."
+  description = "Python version for the Function App (Python v2 model)."
   type        = string
   default     = "3.12"
 }
 
-variable "functions_extension_version" {
-  description = "Azure Functions extension version."
+variable "package_dir" {
+  description = "Path to the function package directory (host.json). When empty, the module's bundled package is used. The Python v2 entry point is generated from function_app_name/function_name."
   type        = string
-  default     = "~4"
+  default     = ""
 }
 
 variable "app_settings" {
-  description = "Application settings for the Function App."
+  description = "Application settings (environment) injected into the Function App."
   type        = map(string)
   default     = {}
-}
-
-variable "identity_ids" {
-  description = "List of user-assigned managed identity resource IDs to attach."
-  type        = list(string)
-  default     = []
 }
 
 variable "tags" {

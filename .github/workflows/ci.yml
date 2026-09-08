@@ -155,8 +155,8 @@ jobs:
         if: always()
         continue-on-error: true
         run: |
-           # Empty the artifacts bucket
-           aws s3 rm s3://cloudforge-dev-artifacts --recursive || true
+           # Empty the artifacts bucket (point the AWS CLI at Floci, not real AWS)
+           aws s3 rm s3://cloudforge-dev-artifacts --recursive --endpoint-url http://localhost:4566 || true
            tofu -chdir=$TOFU_DIR destroy -auto-approve -input=false
 
   promote-staging:

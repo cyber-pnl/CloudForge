@@ -78,6 +78,36 @@ Ce n'est ni utile ni « operable ».
    d'intégration, puisque le déploiement est bloqué.
 3. Ce journal documente le pourquoi, pour que la décision reste explicable.
 
+## Mise à jour : les Functions provisionnées via l'API native de Floci-AZ
+
+Le blocage (b) de la section 1 a été **levé partiellement**. En testant
+directement Floci-AZ, on a découvert une **API native Functions** propre à
+l'émulateur (pas une API Azure réelle) qui permet de créer une Function App et
+de déployer une fonction Python v2 :
+
+- `PUT {endpoint}/{account}-functions/admin/apps/{app}` → `201`
+- `PUT {endpoint}/{account}-functions/admin/apps/{app}/functions/{func}` → `201`
+- Invocation : `{endpoint}/{account}-functions/api/{app}/{func}` → `200` vérifié
+
+Point clé : seul le modèle **Python v2** (un `function_app.py` à la racine du
+ZIP, dont la route HTTP égale le nom de la fonction) est reconnu. Les layouts
+classiques v1 de Node/Java/.NET donnent « 0 functions found » (`404`).
+
+Le module `az-functions` utilise désormais un `null_resource` + `local-exec` →
+`scripts/azure-functions-deploy.sh` plutôt que `azurerm`. L'endpoint est en
+**HTTPS** (`https://localhost:4577`, avec `-k` pour le certificat auto-signé)
+afin que l'`invoke_url` satisfasse les webhooks exigeant `https` (ex. le
+subscription Event Grid du worker). Voir `ADR-007`.
+
+Conséquences :
+
+- L'environnement `dev-az` **valide et planifie** proprement (`Plan: 21 to add`),
+  y compris les 4 Function Apps et la souscription Event Grid du worker.
+- Ce chemin reste **spécifique à l'émulateur** et n'est **pas** portable vers un
+  vrai Azure App Service.
+- Il ne lève **pas** le blocage global de l'`apply` de `dev-az` (autre routage
+  data-plane/TLS azurerm) : la validation reste confinée au niveau `plan`.
+
 ## Voies de sortie possibles (pour plus tard)
 
 - Si Floci-AZ ajoute l'émulation de `Microsoft.Web/serverfarms` (App Service

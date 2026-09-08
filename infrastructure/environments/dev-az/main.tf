@@ -93,12 +93,8 @@ module "keyvault" {
 module "users_function" {
   source = "../../modules/az-functions"
 
-  function_app_name          = "${var.name_prefix}-users"
-  resource_group_name        = azurerm_resource_group.main.name
-  location                   = azurerm_resource_group.main.location
-  storage_account_name       = module.storage.storage_account_name
-  storage_account_access_key = module.storage.primary_access_key
-  identity_ids               = [module.functions_identity.identity_id]
+  function_app_name = "${var.name_prefix}-users"
+  function_name     = "users"
 
   app_settings = {
     SERVICE_NAME = "users"
@@ -113,12 +109,8 @@ module "users_function" {
 module "projects_function" {
   source = "../../modules/az-functions"
 
-  function_app_name          = "${var.name_prefix}-projects"
-  resource_group_name        = azurerm_resource_group.main.name
-  location                   = azurerm_resource_group.main.location
-  storage_account_name       = module.storage.storage_account_name
-  storage_account_access_key = module.storage.primary_access_key
-  identity_ids               = [module.functions_identity.identity_id]
+  function_app_name = "${var.name_prefix}-projects"
+  function_name     = "projects"
 
   app_settings = {
     SERVICE_NAME     = "projects"
@@ -135,12 +127,8 @@ module "projects_function" {
 module "worker_function" {
   source = "../../modules/az-functions"
 
-  function_app_name          = "${var.name_prefix}-worker"
-  resource_group_name        = azurerm_resource_group.main.name
-  location                   = azurerm_resource_group.main.location
-  storage_account_name       = module.storage.storage_account_name
-  storage_account_access_key = module.storage.primary_access_key
-  identity_ids               = [module.functions_identity.identity_id]
+  function_app_name = "${var.name_prefix}-worker"
+  function_name     = "worker"
 
   app_settings = {
     ARTIFACT_BUCKET = module.storage.storage_account_name
@@ -154,12 +142,8 @@ module "worker_function" {
 module "dispatcher_function" {
   source = "../../modules/az-functions"
 
-  function_app_name          = "${var.name_prefix}-dispatcher"
-  resource_group_name        = azurerm_resource_group.main.name
-  location                   = azurerm_resource_group.main.location
-  storage_account_name       = module.storage.storage_account_name
-  storage_account_access_key = module.storage.primary_access_key
-  identity_ids               = [module.functions_identity.identity_id]
+  function_app_name = "${var.name_prefix}-dispatcher"
+  function_name     = "dispatcher"
 
   app_settings = {
     TABLE_NAME     = module.cosmosdb.account_name
@@ -226,7 +210,7 @@ module "events" {
 
   event_subscriptions = {
     worker = {
-      endpoint             = "${module.worker_function.default_hostname}/api/worker"
+      endpoint             = module.worker_function.invoke_url
       included_event_types = ["cloudforge.job"]
       subject_begins_with  = "cloudforge."
     }
